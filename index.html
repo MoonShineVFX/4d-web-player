@@ -9,6 +9,9 @@
 </head>
 <body>
     <input id="input-file" type="file" onchange="player.importFiles(this.files)" multiple/>
+    <video id="import-video" loop playsinline controls preload="auto" width="240">
+        <source src="texture_2k.mp4">
+    </video>
     <script src="js/three.js"></script>
     <script src="js/DRACOLoader.js"></script>
     <script src="js/GLTFLoader.js"></script>
