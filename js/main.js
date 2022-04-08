@@ -1,152 +1,116 @@
+// DEFINE
+const FRAME_DURATION = 1000 / 30;
+const DELAY_DURATION = 500;
+
+
 // initial
 const scene = new THREE.Scene();
+scene.background = new THREE.Color(0x152126);
 const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight);
 const renderer = new THREE.WebGL1Renderer({antialias: true});
-renderer.outputEncoding = THREE.sRGBEncoding;
 
 renderer.setSize(window.innerWidth, window.innerHeight);
-document.body.appendChild(renderer.domElement);
+document.body.prepend(renderer.domElement);
 camera.position.y -= 0.15;
 camera.position.z = 0.5;
 
 
-// light
-const amLight = new THREE.AmbientLight(0xFFFFFF, 0.1);
-const ptLight = new THREE.PointLight(0xFFFFFF, 1, 100);
-ptLight.position.set(1, 1, 0);
-scene.add(amLight);
-scene.add(ptLight);
+// mp4 frame extractor
+const mp4Extractor = new Mp4FrameExtractor();
+fetch('texture_2k.mp4').then(
+  response => response.arrayBuffer()
+).then(
+  arrayBuffer => {
+    mp4Extractor.loadArrayBuffer(arrayBuffer);
+  }
+);
 
 
-// video material
-const video = document.getElementById( 'import-video' );
-video.playbackRate = 1;
-const texture = new THREE.VideoTexture(video);
+// create texture for mp4
+const gl = renderer.domElement.getContext('webgl');
+
+const texture = new THREE.Texture();
+texture.realGlTexture = gl.createTexture();
+texture.isInitialize = false;
 texture.encoding = THREE.sRGBEncoding;
 texture.flipY = false;
+renderer.properties.get(texture).__webglTexture = texture.realGlTexture;
+
 const material = new THREE.MeshBasicMaterial({color: 0xffffff, map: texture});
 
 
-// draco
-const loader = new THREE.GLTFLoader();
-const dracoLoader = new THREE.DRACOLoader();
-dracoLoader.setDecoderPath('/draco/');
-loader.setDRACOLoader(dracoLoader);
+mp4Extractor.onNext = frame => {
+  gl.bindTexture(gl.TEXTURE_2D, texture.realGlTexture);
+  if (!texture.isInitialize) {
+    texture.isInitialize = true;
+    gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, frame);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.NEAREST);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.NEAREST);
+  } else {
+    gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, frame);
+  }
+};
 
 
-// player
-class FourdPlayer {
-  constructor() {
-    this.currentMeshIndex = -1;
-    this.gltfs = [];
-    this.preloadFrameThreshold = 30;
-    this.preloadFrameCount = this.preloadFrameThreshold + 1;
-    this.active = false;
-    this.files = [];
+// geo
+const gltfExtractor = new GltfFrameExtractor(material);
+gltfExtractor.onNext = (lastGltf, currentGltf) => {
+  if (lastGltf) {
+    scene.remove(lastGltf);
+    lastGltf.traverse(function(obj) {
+      if(obj.geometry)
+        obj.geometry.dispose();
+      if(obj.mesh)
+        obj.mesh.dispose();
+      // if(obj.material)
+      //   obj.material.dispose();
+      // if(obj.texture)
+      //   obj.texture.dispose();
+    });
   }
 
-  importFiles(files) {
-    for (let i = 0; i < files.length; i++) {
-      const file = files[i];
-      const frameNumber = Number(file.name.split('.')[0]);
-      this.files[frameNumber] = file;
-    }
-
-    for (let i = 0; i < this.preloadFrameCount; i++) {
-      this.preloadFile(i);
-    }
-  }
-
-  preloadFile(index) {
-    const reader = new FileReader();
-    const thisPlayer = this;
-    reader.onload = function() {
-      loader.parse(
-        reader.result, '',
-        function(gltf) {thisPlayer.addGltf(index, gltf)}
-      )
-    };
-    reader.readAsArrayBuffer(this.files[index]);
-  }
-
-  addGltf(index, gltf) {
-    const mesh = gltf.scene.children[0];
-    const old_material = mesh.material;
-    mesh.material = material;
-    // mesh.material.color.setRGB(1, 1, 1);
-    // mesh.material.roughness = 0.4;
-    // mesh.material.flatShading = false;
-    old_material.dispose();
-    mesh.geometry.computeVertexNormals(true);
-    // mesh.material.needsUpdate = true;
-
-    this.gltfs[index] = gltf.scene;
-    this.preloadFrameCount -= 1;
-    if (this.preloadFrameCount === 0) {
-      this.active = true;
-      superLoop(0);
-      // video.play();
-    }
-  }
-
-  tick(frame) {
-    if (!this.active) return;
-    // check next buffer loaded
-    // const nextMeshIndex = (this.currentMeshIndex + 1) % this.files.length;
-    // const nextMeshIndex = Math.ceil((videoTime - 1/30/5) * 30) % this.files.length;
-    const nextMeshIndex = frame;
-    if (nextMeshIndex === this.currentMeshIndex) {
-      return;
-    }
-    // console.debug(nextMeshIndex);
-    if (!this.gltfs[nextMeshIndex]) {
-      // this.deltaFrame -= 1;
-      console.warn('not match: ', nextMeshIndex);
-      video.pause();
-      this.active = false
-      return;
-    }
-
-    // check last buffer
-    let lastGltf = undefined;
-    if (this.currentMeshIndex !== -1) {
-      lastGltf = this.gltfs[this.currentMeshIndex];
-    }
-    if (lastGltf) {
-      scene.remove(lastGltf);
-      lastGltf.traverse(function(obj) {
-        if(obj.geometry)
-          obj.geometry.dispose();
-        // if(obj.material)
-        //   obj.material.dispose();
-        if(obj.mesh)
-          obj.mesh.dispose();
-        // if(obj.texture)
-        //   obj.texture.dispose();
-      });
-      this.gltfs[this.currentMeshIndex] = null;
-    }
-
-    // add this buffer
-    video.currentTime = 1 / 30 * frame + 0.001;
-    texture.needsUpdate = true;
-    this.currentMeshIndex = nextMeshIndex;
-    scene.add(this.gltfs[this.currentMeshIndex]);
-
-    // preload
-    this.preloadFile((this.currentMeshIndex + this.preloadFrameThreshold) % this.files.length);
-    }
+  scene.add(currentGltf);
 }
-const player = new FourdPlayer();
-
 
 // render
-function superLoop(frameNumber) {
-  player.tick(frameNumber);
-  setTimeout(() => this.superLoop(frameNumber += 1), 33.333);
+let playing = false;
+let lastTimeStamp = null;
+let deltaTime = 0;
+function startPlay() {
+  if (!playing) return;
+  if (!lastTimeStamp) {
+    lastTimeStamp = performance.now();
+    return;
+  }
+  const currentTimeStamp = performance.now();
+  deltaTime += currentTimeStamp - lastTimeStamp;
+  lastTimeStamp = currentTimeStamp;
+
+  if (deltaTime < FRAME_DURATION) return;
+  deltaTime -= FRAME_DURATION;
+
+  if (!mp4Extractor.checkNextFrameAvailability() ||
+      !gltfExtractor.checkNextFrameAvailability()) {
+    deltaTime = -DELAY_DURATION;
+    return
+  }
+
+  mp4Extractor.nextFrame();
+  gltfExtractor.nextFrame();
 }
+
+
 function animate() {
   requestAnimationFrame(animate);
+  startPlay();
   renderer.render(scene, camera);
 }
 animate();
+
+
+document.addEventListener('keydown', event => {
+  if (event.code === 'Space') {
+    playing = !playing;
+    event.preventDefault();
+  }
+})

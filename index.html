@@ -8,13 +8,17 @@
     </style>
 </head>
 <body>
-    <input id="input-file" type="file" onchange="player.importFiles(this.files)" multiple/>
-    <video id="import-video" loop playsinline controls preload="auto" width="240">
-        <source src="texture_2k.mp4">
-    </video>
+    <input id="input-file" type="file" onchange="gltfExtractor.importFiles(this.files)" multiple/>
+
     <script src="js/three.js"></script>
     <script src="js/DRACOLoader.js"></script>
     <script src="js/GLTFLoader.js"></script>
+
+    <script src="js/mp4box.all.min.js"></script>
+    <script src="js/utility.js"></script>
+    <script src="js/mp4FrameExtractor.js"></script>
+    <script src="js/gltfFrameExtractor.js"></script>
+
     <script src="js/main.js"></script>
 </body>
 </html>
