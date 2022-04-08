@@ -13,8 +13,9 @@ class GltfFrameExtractor {
     this.files = [];
 
     this.isReady = false;
-    this.onReady = null;
     this.onNext = null;
+
+    this.loadResolve = null;
 
     // Three.js
     this.loader = new THREE.GLTFLoader();
@@ -24,15 +25,20 @@ class GltfFrameExtractor {
   }
 
   importFiles(files) {
-    for (let i = 0; i < files.length; i++) {
-      const file = files[i];
-      const frameNumber = Number(file.name.split('.')[0]);
-      this.files[frameNumber] = file;
-    }
+    const self = this;
+    return new Promise((resolve, _) => {
+      self.loadResolve = resolve;
 
-    for (let i = 0; i < this.initialPreloadedFrameCount; i++) {
-      this.preloadFile(i);
-    }
+      for (let i = 0; i < files.length; i++) {
+        const file = files[i];
+        const frameNumber = Number(file.name.split('.')[0]);
+        self.files[frameNumber] = file;
+      }
+
+      for (let i = 0; i < self.initialPreloadedFrameCount; i++) {
+        self.preloadFile(i);
+      }
+    });
   }
 
   preloadFile(index) {
@@ -59,7 +65,7 @@ class GltfFrameExtractor {
     if (this.initialPreloadedFrameCount === 0) {
       this.isReady = true;
       console.log('Ready.');
-      if (this.onReady) this.onReady();
+      this.loadResolve('ready');
     }
   }
 
@@ -92,7 +98,7 @@ class GltfFrameExtractor {
     this.currentMeshIndex = nextMeshIndex;
     const currentGltf = this.gltfs[this.currentMeshIndex];
 
-    console.debug('Geo frame: ', this.currentMeshIndex);
+    console.debug('Gltf frame: ', this.currentMeshIndex);
     if (this.onNext) this.onNext(lastGltf, currentGltf);
 
     // preload

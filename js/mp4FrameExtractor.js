@@ -21,18 +21,26 @@ class Mp4FrameExtractor {
     this.isReady = false;
     this.isWaitingForVideoFrame = false;
 
-    this.onReady = null;
     this.onNext = null;
+
+    this.loadResolve = null;
+    this.loadReject = null;
   }
 
   async loadArrayBuffer(arrayBuffer) {
-    this.mp4box = MP4Box.createFile();
-    this.mp4box.onSamples = (...args) => this.onMp4boxSamples(...args);
-    this.mp4box.onReady = arg => this.onMp4boxReady(arg);
-    this.mp4box.onError = arg => this.onError(arg);
+    const self = this;
+    return new Promise((resolve, reject) => {
+      self.mp4box = MP4Box.createFile();
+      self.mp4box.onSamples = (...args) => this.onMp4boxSamples(...args);
+      self.mp4box.onReady = arg => this.onMp4boxReady(arg);
+      self.mp4box.onError = arg => this.onError(arg);
 
-    arrayBuffer.fileStart = 0;
-    this.mp4box.appendBuffer(arrayBuffer);
+      arrayBuffer.fileStart = 0;
+      self.mp4box.appendBuffer(arrayBuffer);
+
+      self.loadResolve = resolve;
+      self.loadReject = reject;
+    });
   }
 
   preLoad() {
@@ -86,6 +94,7 @@ class Mp4FrameExtractor {
 
   onError(error) {
     console.error(error);
+    this.loadReject(error);
   }
 
   onFrameDecoded(frame) {
@@ -98,7 +107,7 @@ class Mp4FrameExtractor {
     if (!this.isReady) {
       this.isReady = true;
       console.log('Ready.');
-      if (this.onReady) this.onReady();
+      this.loadResolve('Ready');
     }
 
     this.currentDecodedFrameNumber = (this.currentDecodedFrameNumber + 1) % this.sampleCount;

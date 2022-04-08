@@ -17,12 +17,10 @@ camera.position.z = 0.5;
 
 // mp4 frame extractor
 const mp4Extractor = new Mp4FrameExtractor();
-fetch('texture_2k.mp4').then(
+const mp4Loading = fetch('texture_2k.mp4').then(
   response => response.arrayBuffer()
 ).then(
-  arrayBuffer => {
-    mp4Extractor.loadArrayBuffer(arrayBuffer);
-  }
+  arrayBuffer => mp4Extractor.loadArrayBuffer(arrayBuffer)
 );
 
 
@@ -52,7 +50,7 @@ mp4Extractor.onNext = frame => {
 };
 
 
-// geo
+// gltf
 const gltfExtractor = new GltfFrameExtractor(material);
 gltfExtractor.onNext = (lastGltf, currentGltf) => {
   if (lastGltf) {
@@ -108,9 +106,15 @@ function animate() {
 animate();
 
 
+// controls
 document.addEventListener('keydown', event => {
   if (event.code === 'Space') {
     playing = !playing;
     event.preventDefault();
   }
 })
+
+function onFilesSelected(files) {
+  const gltfLoading = gltfExtractor.importFiles(files);
+  Promise.all([gltfLoading, mp4Loading]).then(() => playing = true);
+}
