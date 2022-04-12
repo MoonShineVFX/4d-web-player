@@ -6,7 +6,8 @@
       <excludeFolder url="file://$MODULE_DIR$/.tmp" />
       <excludeFolder url="file://$MODULE_DIR$/tmp" />
       <excludeFolder url="file://$MODULE_DIR$/draco" />
-      <excludeFolder url="file://$MODULE_DIR$/gltf_mini_drc" />
+      <excludeFolder url="file://$MODULE_DIR$/resource/gltf_mini_drc" />
+      <excludeFolder url="file://$MODULE_DIR$/resource" />
     </content>
     <orderEntry type="inheritedJdk" />
     <orderEntry type="sourceFolder" forTests="false" />
