@@ -10,10 +10,12 @@ class GltfFrameExtractor {
     this.material = material;
 
     this.gltfs = [];
-    this.files = [];
+    this.fileAddress = [];
+    this.loadType = null;  // file or url
 
     this.isReady = false;
     this.onNext = null;
+    this.onLoading = null;
 
     this.loadResolve = null;
 
@@ -24,7 +26,33 @@ class GltfFrameExtractor {
     this.loader.setDRACOLoader(this.dracoLoader);
   }
 
+  importUrls(urls) {
+    this.loadType = 'url';
+    const self = this;
+    return new Promise((resolve, _) => {
+      self.loadResolve = resolve;
+      self.fileAddress = urls;
+
+      for (let i = 0; i < self.initialPreloadedFrameCount; i++) {
+        self.preloadUrl(i);
+      }
+    });
+  }
+
+  preloadUrl(index) {
+    const self = this;
+    fetch(this.fileAddress[index]).then(
+      response => response.arrayBuffer()
+    ).then(arrayBuffer => {
+      self.loader.parse(
+        arrayBuffer, '',
+        function(gltf) {self.addGltf(index, gltf)}
+      )
+    })
+  }
+
   importFiles(files) {
+    this.loadType = 'file';
     const self = this;
     return new Promise((resolve, _) => {
       self.loadResolve = resolve;
@@ -32,7 +60,7 @@ class GltfFrameExtractor {
       for (let i = 0; i < files.length; i++) {
         const file = files[i];
         const frameNumber = Number(file.name.split('.')[0]);
-        self.files[frameNumber] = file;
+        self.fileAddress[frameNumber] = file;
       }
 
       for (let i = 0; i < self.initialPreloadedFrameCount; i++) {
@@ -50,7 +78,17 @@ class GltfFrameExtractor {
         function(gltf) {self.addGltf(index, gltf)}
       )
     };
-    reader.readAsArrayBuffer(this.files[index]);
+    reader.readAsArrayBuffer(this.fileAddress[index]);
+  }
+
+  preloadFrame(index) {
+    if (this.loadType === 'file') {
+      this.preloadFile(index);
+    } else if (this.loadType === 'url') {
+      this.preloadUrl(index);
+    } else {
+      console.error('Wrong loadType: ', this.loadType);
+    }
   }
 
   addGltf(index, gltf) {
@@ -61,16 +99,23 @@ class GltfFrameExtractor {
     mesh.geometry.computeVertexNormals(true);
 
     this.gltfs[index] = gltf.scene;
-    this.initialPreloadedFrameCount -= 1;
-    if (this.initialPreloadedFrameCount === 0) {
-      this.isReady = true;
-      console.log('Ready.');
-      this.loadResolve('ready');
+
+    if (!this.isReady) {
+      this.initialPreloadedFrameCount -= 1;
+      if (this.onLoading) {
+        const progress = (PRELOAD_FRAME_COUNT - this.initialPreloadedFrameCount) / PRELOAD_FRAME_COUNT;
+        this.onLoading(progress);
+      }
+      if (this.initialPreloadedFrameCount === 0) {
+        this.isReady = true;
+        console.log('Ready.');
+        this.loadResolve('ready');
+      }
     }
   }
 
   checkNextFrameAvailability() {
-    const nextMeshIndex = (this.currentMeshIndex + 1) % this.files.length;
+    const nextMeshIndex = (this.currentMeshIndex + 1) % this.fileAddress.length;
     return this.gltfs[nextMeshIndex];
   }
 
@@ -85,7 +130,7 @@ class GltfFrameExtractor {
       this.isReady = false;
       return;
     }
-    let nextMeshIndex = (this.currentMeshIndex + 1) % this.files.length;
+    let nextMeshIndex = (this.currentMeshIndex + 1) % this.fileAddress.length;
 
     // check last buffer
     let lastGltf = undefined;
@@ -102,6 +147,6 @@ class GltfFrameExtractor {
     if (this.onNext) this.onNext(lastGltf, currentGltf);
 
     // preload
-    this.preloadFile((this.currentMeshIndex + PRELOAD_FRAME_COUNT) % this.files.length);
+    this.preloadFrame((this.currentMeshIndex + PRELOAD_FRAME_COUNT) % this.fileAddress.length);
   }
 }

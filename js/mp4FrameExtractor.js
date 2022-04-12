@@ -22,6 +22,7 @@ class Mp4FrameExtractor {
     this.isWaitingForVideoFrame = false;
 
     this.onNext = null;
+    this.onReady = null;
 
     this.loadResolve = null;
     this.loadReject = null;
@@ -108,6 +109,7 @@ class Mp4FrameExtractor {
       this.isReady = true;
       console.log('Ready.');
       this.loadResolve('Ready');
+      if (this.onReady) this.onReady();
     }
 
     this.currentDecodedFrameNumber = (this.currentDecodedFrameNumber + 1) % this.sampleCount;

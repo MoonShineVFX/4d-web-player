@@ -1,0 +1,15 @@
+body {
+    margin: 0;
+}
+
+#input-file {
+    display: none;
+}
+
+#loading-info {
+    position: absolute;
+    top: 0;
+    left: 5vw;
+    font-size: 30px;
+    color: white;
+}
