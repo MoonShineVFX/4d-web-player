@@ -27,14 +27,7 @@ class ThreeEngine {
     this.camera.position.y = CAMERA_HEIGHT_OFFSET;
     this.camera.position.z = CAMERA_DISTANCE;
 
-    // mp4 texture
-    this.rawTexture = new THREE.Texture();
-    this.rawTexture.realGlTexture = this.gl.createTexture();
-    this.rawTexture.isInitialize = false;  // for update
-    this.rawTexture.encoding = THREE.sRGBEncoding;
-    this.rawTexture.flipY = false;
-    this.renderer.properties.get(this.rawTexture).__webglTexture = this.rawTexture.realGlTexture;
-    this.uniMaterial = new THREE.MeshBasicMaterial({color: 0xffffff, map: this.rawTexture});
+    this.uniMaterial = new THREE.MeshBasicMaterial({color: 0xffffff});
 
     // orbit controls
     this.orbitControls.enableDamping = true;
@@ -43,15 +36,31 @@ class ThreeEngine {
   
   updateRawTextureFromVideoFrame(videoFrame) {
     const gl = this.gl;
-    gl.bindTexture(gl.TEXTURE_2D, this.rawTexture.realGlTexture);
+
     if (!this.rawTexture.isInitialize) {
+      // initialize
+      this.rawTexture = new THREE.Texture();
+      this.uniMaterial.map = this.rawTexture;
+      this.rawTexture.realGlTexture = this.gl.createTexture();
+      this.rawTexture.isInitialize = false;  // for update
+      this.rawTexture.encoding = THREE.sRGBEncoding;
+      this.rawTexture.flipY = false;
+      this.renderer.properties.get(this.rawTexture).__webglTexture = this.rawTexture.realGlTexture;
+
       this.rawTexture.isInitialize = true;
+
+      gl.bindTexture(gl.TEXTURE_2D, this.rawTexture.realGlTexture);
       gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, videoFrame);
       gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.NEAREST);
       gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.NEAREST);
     } else {
+      gl.bindTexture(gl.TEXTURE_2D, this.rawTexture.realGlTexture);
       gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, videoFrame);
     }
+  }
+
+  updateTexture(texture) {
+    this.uniMaterial.map = texture;
   }
 
   replaceGltf(oldGltf, newGltf) {

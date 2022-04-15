@@ -3,7 +3,7 @@ DRACO_DECODER_PATH = '/draco/';
 
 
 class GltfFrameExtractor {
-  constructor(material) {
+  constructor(material = null) {
     this.currentMeshIndex = -1;
     this.initialPreloadedFrameCount = PRELOAD_FRAME_COUNT + 1;
 

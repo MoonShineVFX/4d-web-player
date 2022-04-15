@@ -21,6 +21,7 @@ class Mp4FrameExtractor {
     this.isReady = false;
     this.isWaitingForVideoFrame = false;
 
+    this.onLoading = null;
     this.onNext = null;
     this.onReady = null;
 
@@ -28,20 +29,24 @@ class Mp4FrameExtractor {
     this.loadReject = null;
   }
 
-  async loadArrayBuffer(arrayBuffer) {
+  loadArrayBufferFromURL(url) {
     const self = this;
-    return new Promise((resolve, reject) => {
+    const promise = new Promise((resolve, reject) => {
       self.mp4box = MP4Box.createFile();
       self.mp4box.onSamples = (...args) => this.onMp4boxSamples(...args);
       self.mp4box.onReady = arg => this.onMp4boxReady(arg);
       self.mp4box.onError = arg => this.onError(arg);
 
-      arrayBuffer.fileStart = 0;
-      self.mp4box.appendBuffer(arrayBuffer);
-
       self.loadResolve = resolve;
       self.loadReject = reject;
     });
+
+    fetchWithProgress(url, null, this.onLoading).then(arrayBuffer => {
+      arrayBuffer.fileStart = 0;
+      self.mp4box.appendBuffer(arrayBuffer)
+    });
+
+    return promise;
   }
 
   preLoad() {

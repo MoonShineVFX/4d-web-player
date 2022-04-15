@@ -3,11 +3,24 @@ const FRAME_DURATION = 1000 / 30;
 const DELAY_DURATION = 500;
 
 
+class TextureType {
+  static MP4 = 'mp4';
+  static JPG = 'jpg';
+}
+
+
 class FourdController {
-  constructor() {
-    this.threeManager = new ThreeEngine();
-    this.mp4Extractor = new Mp4FrameExtractor();
-    this.gltfExtractor = new GltfFrameExtractor(this.threeManager.uniMaterial);
+  constructor(textureType) {
+    this.threeEngine = new ThreeEngine();
+    this.gltfExtractor = new GltfFrameExtractor(this.threeEngine.uniMaterial);
+
+    this.textureType = textureType;
+    this.textureExtractor = undefined;
+    if (textureType === TextureType.MP4) {
+      this.textureExtractor = new Mp4FrameExtractor();
+    } else if (textureType === TextureType.JPG) {
+      this.textureExtractor = new JpegFrameExtractor();
+    }
 
     this.readyQueue = [];
 
@@ -20,8 +33,13 @@ class FourdController {
 
   initialize() {
     // Binding
-    this.mp4Extractor.onNext = frame => this.threeManager.updateRawTextureFromVideoFrame(frame);
-    this.gltfExtractor.onNext = (oldGltf, newGltf) => this.threeManager.replaceGltf(oldGltf, newGltf);
+    if (this.textureType === TextureType.MP4) {
+      this.textureExtractor.onNext = frame => this.threeEngine.updateRawTextureFromVideoFrame(frame);
+    } else if (this.textureType === TextureType.JPG) {
+      this.textureExtractor.onNext = texture => this.threeEngine.updateTexture(texture);
+    }
+
+    this.gltfExtractor.onNext = (oldGltf, newGltf) => this.threeEngine.replaceGltf(oldGltf, newGltf);
 
     // Controls
     document.addEventListener('keydown', event => {
@@ -48,13 +66,14 @@ class FourdController {
     Promise.all(this.readyQueue).then(() => this.play());
   }
 
-  loadTextureFromMp4(mp4Url) {
-    const mp4Loading = fetch(mp4Url).then(
-      response => response.arrayBuffer()
-    ).then(
-      arrayBuffer => this.mp4Extractor.loadArrayBuffer(arrayBuffer)
-    );
-    this.readyQueue.push(mp4Loading);
+  loadTextureFromUrl(url) {
+    let textureLoading;
+    if (this.textureType === TextureType.MP4) {
+      textureLoading = this.textureExtractor.loadArrayBufferFromURL(url);
+    } else if (this.textureType === TextureType.JPG) {
+      textureLoading = this.textureExtractor.importUrls(url);
+    }
+    this.readyQueue.push(textureLoading);
   }
 
   play() {
@@ -75,19 +94,19 @@ class FourdController {
     if (this.deltaTime < FRAME_DURATION) return;
     this.deltaTime %= FRAME_DURATION;
 
-    if (!this.mp4Extractor.checkNextFrameAvailability() ||
+    if (!this.textureExtractor.checkNextFrameAvailability() ||
       !this.gltfExtractor.checkNextFrameAvailability()) {
       this.deltaTime = -DELAY_DURATION;
       return
     }
 
-    this.mp4Extractor.nextFrame();
+    this.textureExtractor.nextFrame();
     this.gltfExtractor.nextFrame();
   }
 
   animate() {
     requestAnimationFrame(() => this.animate());
     this.tickNextFrame();
-    this.threeManager.render();
+    this.threeEngine.render();
   }
 }
