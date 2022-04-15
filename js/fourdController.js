@@ -6,6 +6,7 @@ const DELAY_DURATION = 500;
 class TextureType {
   static MP4 = 'mp4';
   static JPG = 'jpg';
+  static NONE = 'none';
 }
 
 
@@ -33,10 +34,8 @@ class FourdController {
 
   initialize() {
     // Binding
-    if (this.textureType === TextureType.MP4) {
-      this.textureExtractor.onNext = frame => this.threeEngine.updateRawTextureFromVideoFrame(frame);
-    } else if (this.textureType === TextureType.JPG) {
-      this.textureExtractor.onNext = texture => this.threeEngine.updateTexture(texture);
+    if (this.textureType !== TextureType.NONE) {
+      this.textureExtractor.onNext = imageData => this.threeEngine.updateRawTexture(imageData);
     }
 
     this.gltfExtractor.onNext = (oldGltf, newGltf) => this.threeEngine.replaceGltf(oldGltf, newGltf);
@@ -94,14 +93,14 @@ class FourdController {
     if (this.deltaTime < FRAME_DURATION) return;
     this.deltaTime %= FRAME_DURATION;
 
-    if (!this.textureExtractor.checkNextFrameAvailability() ||
+    if ((this.textureExtractor && !this.textureExtractor.checkNextFrameAvailability()) ||
       !this.gltfExtractor.checkNextFrameAvailability()) {
       this.deltaTime = -DELAY_DURATION;
       return
     }
 
-    this.textureExtractor.nextFrame();
     this.gltfExtractor.nextFrame();
+    if (this.textureExtractor) this.textureExtractor.nextFrame();
   }
 
   animate() {

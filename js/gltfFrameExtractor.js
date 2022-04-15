@@ -5,7 +5,7 @@ DRACO_DECODER_PATH = '/draco/';
 class GltfFrameExtractor {
   constructor(material = null) {
     this.currentMeshIndex = -1;
-    this.initialPreloadedFrameCount = PRELOAD_FRAME_COUNT + 1;
+    this.initialPreloadedFrameCount = PRELOAD_FRAME_COUNT;
 
     this.material = material;
 
@@ -33,7 +33,7 @@ class GltfFrameExtractor {
       self.loadResolve = resolve;
       self.fileAddress = urls;
 
-      for (let i = 0; i < self.initialPreloadedFrameCount; i++) {
+      for (let i = 0; i < PRELOAD_FRAME_COUNT + 1; i++) {
         self.preloadUrl(i);
       }
     });
@@ -63,7 +63,7 @@ class GltfFrameExtractor {
         self.fileAddress[frameNumber] = file;
       }
 
-      for (let i = 0; i < self.initialPreloadedFrameCount; i++) {
+      for (let i = 0; i < PRELOAD_FRAME_COUNT + 1; i++) {
         self.preloadFile(i);
       }
     });
@@ -130,7 +130,7 @@ class GltfFrameExtractor {
       this.isReady = false;
       return;
     }
-    let nextMeshIndex = (this.currentMeshIndex + 1) % this.fileAddress.length;
+    const nextMeshIndex = (this.currentMeshIndex + 1) % this.fileAddress.length;
 
     // check last buffer
     let lastGltf = undefined;
