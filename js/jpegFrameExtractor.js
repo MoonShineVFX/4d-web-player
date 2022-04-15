@@ -6,7 +6,7 @@ class JpegFrameExtractor {
     this.currentBitmapIndex = -1;
     this.initialPreloadedFrameCount = PRELOAD_FRAME_COUNT;
 
-    this.blobs = []
+    this.urls = []
     this.bitmaps = []
 
     this.onNext = null;
@@ -14,7 +14,6 @@ class JpegFrameExtractor {
 
     this.isReady = false;
 
-    this.loadedCount = 0;
     this.loadResolve = null;
   }
 
@@ -22,37 +21,34 @@ class JpegFrameExtractor {
     const self = this;
     return new Promise((resolve, _) => {
       self.loadResolve = resolve;
-      this.blobs = new Array(urls.length);
+      this.urls = urls;
 
-      let fetches = []
-      urls.forEach((url, index) => {
-        const fetchWork = fetch(url).then(
-          response => response.arrayBuffer()
-        ).then(arrayBuffer => {
-          this.blobs[index] = new Blob([arrayBuffer], {type: 'image/jpeg'});
-          this.loadedCount += 1;
-          if (this.onLoading) this.onLoading(this.loadedCount / this.blobs.length)
-        })
-        fetches.push(fetchWork);
-      });
-
-      Promise.all(fetches).then(() => {
-        for (let i = 0; i < PRELOAD_FRAME_COUNT + 1; i++) {
-          self.preloadBitmap(i);
-        }
-      });
+      for (let i = 0; i < PRELOAD_FRAME_COUNT + 1; i++) {
+        self.preloadBitmap(i);
+      }
     });
   }
 
   preloadBitmap(index) {
     const self = this;
-    createImageBitmap(
-      this.blobs[index],
-      {
-        premultiplyAlpha: 'none',
-        colorSpaceConversion: 'none',
-      }
-    ).then(bitmap => self.addBitmap(index, bitmap));
+    fetch(this.urls[index]).then(
+      response => response.arrayBuffer()
+    ).then(arrayBuffer => {
+      const blob = new Blob([arrayBuffer], {type: 'image/jpeg'});
+      createImageBitmap(
+        blob,
+        {
+          premultiplyAlpha: 'none',
+          colorSpaceConversion: 'none',
+        }
+      ).then(bitmap => self.addBitmap(index, bitmap));
+
+      if (this.onLoading) this.onLoading(
+        (PRELOAD_FRAME_COUNT - self.initialPreloadedFrameCount) / PRELOAD_FRAME_COUNT
+      )
+    })
+
+
   }
 
   addBitmap(index, bitmap) {
@@ -69,7 +65,7 @@ class JpegFrameExtractor {
   }
 
   checkNextFrameAvailability() {
-    const nextBitmapIndex = (this.currentBitmapIndex + 1) % this.blobs.length;
+    const nextBitmapIndex = (this.currentBitmapIndex + 1) % this.urls.length;
     return this.bitmaps[nextBitmapIndex];
   }
 
@@ -84,7 +80,7 @@ class JpegFrameExtractor {
       this.isReady = false;
       return;
     }
-    const nextBitmapIndex = (this.currentBitmapIndex + 1) % this.blobs.length;
+    const nextBitmapIndex = (this.currentBitmapIndex + 1) % this.urls.length;
 
     // check last buffer
     if (this.currentBitmapIndex !== -1) {
@@ -98,6 +94,6 @@ class JpegFrameExtractor {
     if (this.onNext) this.onNext(bitmap);
     bitmap.close();
 
-    this.preloadBitmap((this.currentBitmapIndex + 1) % this.blobs.length);
+    this.preloadBitmap((this.currentBitmapIndex + 1) % this.urls.length);
   }
 }
