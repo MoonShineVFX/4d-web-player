@@ -5,9 +5,10 @@
       <excludeFolder url="file://$MODULE_DIR$/temp" />
       <excludeFolder url="file://$MODULE_DIR$/.tmp" />
       <excludeFolder url="file://$MODULE_DIR$/tmp" />
-      <excludeFolder url="file://$MODULE_DIR$/draco" />
       <excludeFolder url="file://$MODULE_DIR$/resource/gltf_mini_drc" />
       <excludeFolder url="file://$MODULE_DIR$/resource" />
+      <excludeFolder url="file://$MODULE_DIR$/oldjs/js/external" />
+      <excludeFolder url="file://$MODULE_DIR$/oldjs" />
     </content>
     <orderEntry type="inheritedJdk" />
     <orderEntry type="sourceFolder" forTests="false" />

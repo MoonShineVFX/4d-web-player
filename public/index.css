@@ -3,7 +3,7 @@ body {
 }
 
 #input-file {
-    display: none;
+    /*display: none;*/
 }
 
 #loading-info {
