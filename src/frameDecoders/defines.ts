@@ -19,6 +19,8 @@ export class FrameDecoder {
   protected openResolve: (value: string) => void | null;
   protected openReject: (value: string) => void | null;
 
+  protected isReady: boolean;
+
   isNextFrameAvailable(): boolean { return undefined };
   playNextFrame() {};
   open(source: any): Promise<string> { return undefined };

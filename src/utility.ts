@@ -3,11 +3,11 @@ export function nextWithLoop(currentIndex: number, count: number): number {
 }
 
 
-function pad(n: number, width: number, z: string | null): string {
-  z = z || '0';
-  const nString: string = n + '';
-  if (nString.length >= width) return nString;
-  return new Array(width - nString.length + 1).join(z) + nString;
+export function pad(num: number, length: number, padString: string | null): string {
+  padString = padString || '0';
+  const nString: string = num + '';
+  if (nString.length >= length) return nString;
+  return new Array(length - nString.length + 1).join(padString) + nString;
 }
 
 

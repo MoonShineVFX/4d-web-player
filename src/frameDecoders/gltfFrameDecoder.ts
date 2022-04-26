@@ -35,8 +35,6 @@ export default class GltfFrameDecoder extends MeshFrameDecoder {
 
   private loadType: LoadType | null;
 
-  private isReady: boolean;
-
   private loader: GLTFLoader;
   private readonly dracoLoader: DRACOLoader;
 
@@ -176,6 +174,7 @@ export default class GltfFrameDecoder extends MeshFrameDecoder {
     // Check if preloading
     if (!this.isReady) {
       this.initialPreloadedFrameCount -= 1;
+
       if (this.onLoading) {
         const progress = (
           CONFIG.decoder.gltfPreloadFrameCount -
@@ -184,6 +183,7 @@ export default class GltfFrameDecoder extends MeshFrameDecoder {
 
         this.onLoading(progress);
       }
+
       if (this.initialPreloadedFrameCount === 0) {
         this.isReady = true;
         console.log('Ready.');

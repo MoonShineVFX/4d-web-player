@@ -1,13 +1,17 @@
 import CONFIG from './config';
 import Engine from './engine';
-import GltfFrameDecoder from './frameDecoders/gltfFrameDecoder';
-import { MeshFrameDecoder, TextureFrameDecoder } from './frameDecoders/defines';
-import {Mp4FrameDecoder} from './frameDecoders/mp4FrameDecoder';
+import {
+  MeshFrameDecoder,
+  TextureFrameDecoder,
+  GltfFrameDecoder,
+  Mp4FrameDecoder,
+  JpegFrameDecoder
+} from './frameDecoders';
 
 
 export enum TextureType {
   MP4,
-  JPG
+  JPEG
 }
 
 
@@ -57,9 +61,11 @@ export class FourdRecPlayer {
         imageData => this.threeEngine.updateRawTexture(imageData),
         progressPercent => console.log('mp4 load: ' + progressPercent)
       );
-    } else if (this.textureType === TextureType.JPG) {
-      //a this.textureExtractor = new JpegFrameExtractor();
-      // this.textureDecoder.onNext = imageData => this.threeEngine.updateRawTexture(imageData);
+    } else if (this.textureType === TextureType.JPEG) {
+      this.textureDecoder = new JpegFrameDecoder(
+        imageData => this.threeEngine.updateRawTexture(imageData),
+        progressPercent => console.log('jpg load: ' + progressPercent)
+      );
     } else {
       this.textureDecoder = null;
     }
@@ -83,14 +89,8 @@ export class FourdRecPlayer {
     Promise.all(this.readyQueue).then(() => this.play());
   }
 
-  loadTexture(url: string) {
-    let textureLoading;
-    if (this.textureType === TextureType.MP4) {
-      textureLoading = this.textureDecoder.open(url);
-    } else if (this.textureType === TextureType.JPG) {
-      // textureLoading = this.textureDecoder.importUrls(url);
-    }
-    this.readyQueue.push(textureLoading);
+  loadTexture(source: string | string[]) {
+    this.readyQueue.push(this.textureDecoder.open(source));
   }
 
   play() {

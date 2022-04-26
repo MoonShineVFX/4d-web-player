@@ -6,6 +6,7 @@ interface DecoderConfig {
   gltfPreloadFrameCount: number;
   dracoPath: string;
   mp4PreloadFrameCount: number;
+  jpegPreloadFrameCount: number;
 }
 interface EngineConfig {
   cameraFOV: number;
@@ -29,7 +30,8 @@ class Config {
     this.decoder = {
       gltfPreloadFrameCount: 30,
       dracoPath: '/draco/',
-      mp4PreloadFrameCount: 60
+      mp4PreloadFrameCount: 60,
+      jpegPreloadFrameCount: 30
     }
     this.engine = {
       cameraFOV: 60,

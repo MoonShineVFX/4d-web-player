@@ -5,13 +5,13 @@ import CONFIG from '../config';
 
 import { getAvccData } from './mp4FrameDecoderUtility';
 import { TextureFrameDecoder, TextureOnNextCallback, OnLoadingCallback } from './defines';
-import { fetchWithProgress } from '../utility';
+import { fetchWithProgress, nextWithLoop } from '../utility';
 
 
 type Mp4VideoFrame = VideoFrame & {number: number};
 
 
-export class Mp4FrameDecoder extends TextureFrameDecoder {
+export default class Mp4FrameDecoder extends TextureFrameDecoder {
   private videoDecoder: VideoDecoder;
   private mp4box: MP4Box;
   private readonly videoChunkList: EncodedVideoChunk[];
@@ -20,7 +20,6 @@ export class Mp4FrameDecoder extends TextureFrameDecoder {
   private currentFrameIndex: number;
 
   private isPreloading: boolean;
-  private isReady: boolean;
   private isWaitingForVideoFrame: boolean;
 
   constructor(
@@ -54,7 +53,7 @@ export class Mp4FrameDecoder extends TextureFrameDecoder {
   }
 
   open(source: string): Promise<string>;
-  open(source: any): Promise<string> {
+  override open(source: any): Promise<string> {
     const isValidSource = typeof source === 'string';
 
     const self = this;
@@ -89,7 +88,7 @@ export class Mp4FrameDecoder extends TextureFrameDecoder {
     this.isPreloading = true;
     for (let i = 0; i < CONFIG.decoder.mp4PreloadFrameCount; i++) {
       this.videoDecoder.decode(this.videoChunkList[this.currentChunkIndex]);
-      this.currentChunkIndex = (this.currentChunkIndex + 1) % this.frameCount;
+      this.currentChunkIndex = nextWithLoop(this.currentChunkIndex, this.frameCount);
     }
     console.debug('Preloaded to: ', this.currentChunkIndex);
     this.isPreloading = false;
@@ -151,7 +150,7 @@ export class Mp4FrameDecoder extends TextureFrameDecoder {
       this.openResolve('Ready');
     }
 
-    this.currentFrameIndex = (this.currentFrameIndex + 1) % this.frameCount;
+    this.currentFrameIndex = nextWithLoop(this.currentFrameIndex, this.frameCount);
 
     if (this.isWaitingForVideoFrame) {
       this.isWaitingForVideoFrame = false;
@@ -159,11 +158,11 @@ export class Mp4FrameDecoder extends TextureFrameDecoder {
     }
   }
 
-  isNextFrameAvailable() {
-    return this.videoFrameList.length !== 0 || this.isWaitingForVideoFrame;
+  override isNextFrameAvailable() {
+    return this.videoFrameList.length !== 0 && !this.isWaitingForVideoFrame;
   }
 
-  playNextFrame() {
+  override playNextFrame() {
     if (!this.isReady) {
       console.error('Not ready!');
       return;
