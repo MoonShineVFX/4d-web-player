@@ -1,7 +1,7 @@
 {
   "name": "4drec-player",
   "version": "1.0.0",
-  "main": "src/index.js",
+  "main": "src/index.ts",
   "repository": "https://github.com/MoonShineVFX/4d-web-player.git",
   "author": "eli.hung <mrhchief@gmail.com>",
   "license": "MIT",
