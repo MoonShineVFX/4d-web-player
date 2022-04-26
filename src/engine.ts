@@ -65,7 +65,7 @@ export default class Engine {
     this.orbitControls.target.y = CONFIG.engine.cameraHeightOffset;
   }
 
-  updateRawTexture(imageData: TexImageSource) {
+  updateRawTexture(imageData: TexImageSource | VideoFrame) {
     const gl = this.gl;
 
     if (!this.rawTexture.isInitialize) {

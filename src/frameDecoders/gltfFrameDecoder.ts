@@ -62,7 +62,8 @@ export default class GltfFrameDecoder extends MeshFrameDecoder {
 
     this.isReady = false;
 
-    this.loadResolve = null;
+    this.openResolve = null;
+    this.openReject = null;
 
     this.onNext = onNext;
     this.onLoading = onLoading;
@@ -87,12 +88,12 @@ export default class GltfFrameDecoder extends MeshFrameDecoder {
         return;
       }
 
-      self.loadResolve = resolve;
+      self.openResolve = resolve;
       self.frameCount = source.length;
 
       if (isFiles) {
         self.openFiles(source);
-      } else if (source[0] instanceof String) {
+      } else if (typeof source[0] === 'string') {
         self.openUrls(source);
       } else {
         console.error('source is not valid: ', source);
@@ -186,7 +187,7 @@ export default class GltfFrameDecoder extends MeshFrameDecoder {
       if (this.initialPreloadedFrameCount === 0) {
         this.isReady = true;
         console.log('Ready.');
-        this.loadResolve('ready');
+        this.openResolve('ready');
       }
     }
   }

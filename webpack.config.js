@@ -6,7 +6,11 @@ module.exports = {
   mode: 'development',
   devServer: {
     open: true,
-    port: 5500
+    port: 5500,
+    static: {
+      directory: './resource',
+      publicPath: '/resource'
+    }
   },
   entry: {
     fourdRecPlayer: './src/index.ts',

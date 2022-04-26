@@ -11,7 +11,7 @@ function pad(n: number, width: number, z: string | null): string {
 }
 
 
-function fetchWithProgress(
+export function fetchWithProgress(
   url: string, headers: object, progress: (progress: number) => void
 ): Promise<ArrayBuffer> {
   headers = headers || {};

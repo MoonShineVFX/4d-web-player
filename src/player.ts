@@ -1,7 +1,8 @@
 import CONFIG from './config';
 import Engine from './engine';
 import GltfFrameDecoder from './frameDecoders/gltfFrameDecoder';
-import { FrameDecoder } from './frameDecoders/defines';
+import { MeshFrameDecoder, TextureFrameDecoder } from './frameDecoders/defines';
+import {Mp4FrameDecoder} from './frameDecoders/mp4FrameDecoder';
 
 
 export enum TextureType {
@@ -13,8 +14,8 @@ export enum TextureType {
 export class FourdRecPlayer {
   private threeEngine: Engine;
 
-  private meshDecoder: FrameDecoder;
-  private textureDecoder: FrameDecoder | null;
+  private meshDecoder: MeshFrameDecoder;
+  private textureDecoder: TextureFrameDecoder | null;
 
   private readonly textureType: TextureType | null;
 
@@ -52,7 +53,10 @@ export class FourdRecPlayer {
 
     // Texture
     if (this.textureType === TextureType.MP4) {
-      //a this.textureExtractor = new Mp4FrameExtractor();
+      this.textureDecoder = new Mp4FrameDecoder(
+        imageData => this.threeEngine.updateRawTexture(imageData),
+        progressPercent => console.log('mp4 load: ' + progressPercent)
+      );
     } else if (this.textureType === TextureType.JPG) {
       //a this.textureExtractor = new JpegFrameExtractor();
       // this.textureDecoder.onNext = imageData => this.threeEngine.updateRawTexture(imageData);
@@ -79,15 +83,15 @@ export class FourdRecPlayer {
     Promise.all(this.readyQueue).then(() => this.play());
   }
 
-  //a loadTextureFromUrl(url) {
-  //   let textureLoading;
-  //   if (this.textureType === TextureType.MP4) {
-  //     textureLoading = this.textureDecoder.loadArrayBufferFromURL(url);
-  //   } else if (this.textureType === TextureType.JPG) {
-  //     textureLoading = this.textureDecoder.importUrls(url);
-  //   }
-  //   this.readyQueue.push(textureLoading);
-  // }
+  loadTexture(url: string) {
+    let textureLoading;
+    if (this.textureType === TextureType.MP4) {
+      textureLoading = this.textureDecoder.open(url);
+    } else if (this.textureType === TextureType.JPG) {
+      // textureLoading = this.textureDecoder.importUrls(url);
+    }
+    this.readyQueue.push(textureLoading);
+  }
 
   play() {
     console.debug('Start playing');
@@ -109,6 +113,7 @@ export class FourdRecPlayer {
 
     if ((this.textureDecoder && !this.textureDecoder.isNextFrameAvailable()) ||
       !this.meshDecoder.isNextFrameAvailable()) {
+      console.warn('Decoder is buffering.');
       this.deltaTime = -CONFIG.player.delayDuration;
       return
     }
