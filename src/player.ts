@@ -7,6 +7,7 @@ import {
   Mp4FrameDecoder,
   JpegFrameDecoder
 } from './frameDecoders';
+import VideoFrameDecoder from './frameDecoders/videoFrameDecoder';
 
 
 export enum TextureType {
@@ -57,9 +58,17 @@ export class FourdRecPlayer {
 
     // Texture
     if (this.textureType === TextureType.MP4) {
-      this.textureDecoder = new Mp4FrameDecoder(
-        imageData => this.threeEngine.updateRawTexture(imageData),
-        progressPercent => console.log('mp4 load: ' + progressPercent)
+      // this.textureDecoder = new Mp4FrameDecoder(
+      //   imageData => this.threeEngine.updateRawTexture(imageData),
+      //   progressPercent => console.log('mp4 load: ' + progressPercent)
+      // );
+      this.textureDecoder = new VideoFrameDecoder(
+        (imageData, currentFrame) => {
+          if (!this.isPlaying) return;
+          this.threeEngine.updateRawTexture(imageData);
+          this.meshDecoder.playNextFrame(currentFrame);
+        },
+        'video-player'
       );
     } else if (this.textureType === TextureType.JPEG) {
       this.textureDecoder = new JpegFrameDecoder(
@@ -98,7 +107,7 @@ export class FourdRecPlayer {
     this.isPlaying = true;
   }
 
-  tickNextFrame() {
+  tick(): boolean {
     if (!this.isPlaying) return;
     if (!this.lastTimeStamp) {
       this.lastTimeStamp = performance.now();
@@ -120,11 +129,13 @@ export class FourdRecPlayer {
 
     this.meshDecoder.playNextFrame();
     if (this.textureDecoder) this.textureDecoder.playNextFrame();
+
+    return true;
   }
 
   animate() {
     requestAnimationFrame(() => this.animate());
-    this.tickNextFrame();
+    // this.tick();
     this.threeEngine.render();
   }
 }

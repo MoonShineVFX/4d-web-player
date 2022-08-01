@@ -32,7 +32,6 @@ export default class Mp4FrameDecoder extends TextureFrameDecoder {
       error: (error: DOMException) => this.onError(error)
     });
     this.mp4box = null;
-    this.frameCount = 0;
 
     this.videoChunkList = [];
     this.videoFrameList = [];
@@ -42,11 +41,6 @@ export default class Mp4FrameDecoder extends TextureFrameDecoder {
 
     this.isPreloading = false;
     this.isWaitingForVideoFrame = false;
-
-    this.isReady = false;
-
-    this.openResolve = null;
-    this.openReject = null;
 
     this.onNext = onNext;
     this.onLoading = onLoading;
@@ -74,10 +68,11 @@ export default class Mp4FrameDecoder extends TextureFrameDecoder {
     });
 
     if (isValidSource) {
+      console.debug(`Fetch: ${source}`);
       fetchWithProgress(source, null, this.onLoading).then(arrayBuffer => {
         (arrayBuffer as MP4Box.MP4ArrayBuffer).fileStart = 0;
         self.mp4box.appendBuffer(arrayBuffer)
-      });
+      }, error => console.warn(error));
     }
 
     return promise;

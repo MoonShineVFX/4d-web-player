@@ -38,6 +38,8 @@ export default class GltfFrameDecoder extends MeshFrameDecoder {
   private loader: GLTFLoader;
   private readonly dracoLoader: DRACOLoader;
 
+  private buffering: boolean;
+
   frameCount: number;
 
   constructor(
@@ -49,7 +51,6 @@ export default class GltfFrameDecoder extends MeshFrameDecoder {
 
     this.currentMeshIndex = -1;
     this.initialPreloadedFrameCount = CONFIG.decoder.gltfPreloadFrameCount;
-    this.frameCount = 0;
 
     this.material = material;
 
@@ -57,11 +58,6 @@ export default class GltfFrameDecoder extends MeshFrameDecoder {
     this.files = [];
     this.urls = [];
     this.loadType = null;
-
-    this.isReady = false;
-
-    this.openResolve = null;
-    this.openReject = null;
 
     this.onNext = onNext;
     this.onLoading = onLoading;
@@ -71,6 +67,8 @@ export default class GltfFrameDecoder extends MeshFrameDecoder {
     this.dracoLoader = new DRACOLoader();
     this.dracoLoader.setDecoderPath(CONFIG.decoder.dracoPath);
     this.loader.setDRACOLoader(this.dracoLoader);
+
+    this.buffering = false;
   }
 
   open(source: FileList): Promise<string>;
@@ -188,6 +186,7 @@ export default class GltfFrameDecoder extends MeshFrameDecoder {
         this.isReady = true;
         console.log('Ready.');
         this.openResolve('ready');
+        // this.playNextFrame();
       }
     }
   }
@@ -197,22 +196,32 @@ export default class GltfFrameDecoder extends MeshFrameDecoder {
     return this.gltfScenes[nextMeshIndex] != null;
   }
 
-  override playNextFrame() {
+  playNextFrame(currentFrame: number) {
+    // if (currentFrame >= 1) return;
+    if (currentFrame === -1) {
+      console.warn('nono');
+      return;
+    }
     if (!this.isReady) {
       console.warn('Not ready yet.');
       return;
     }
 
     if (!this.isNextFrameAvailable()) {
-      console.warn('mesh not found');
-      this.isReady = false;
+      console.warn('BUFFFFFFFFFFFFFFERRRRRING');
+      if (!this.buffering) {
+        (document.getElementById('video-player') as HTMLMediaElement).pause();
+        this.buffering = true;
+      }
+      setTimeout(() => this.playNextFrame(currentFrame), 1000);
       return;
     }
+
     const nextMeshIndex = nextWithLoop(this.currentMeshIndex, this.frameCount);
 
     // check last buffer
     let lastGltfScene = undefined;
-    if (this.currentMeshIndex !== -1) {
+    if (currentFrame !== undefined && this.currentMeshIndex !== -1) {
       lastGltfScene = this.gltfScenes[this.currentMeshIndex];
       this.gltfScenes[this.currentMeshIndex] = null;
     }
@@ -222,9 +231,20 @@ export default class GltfFrameDecoder extends MeshFrameDecoder {
     const currentGltfScene = this.gltfScenes[this.currentMeshIndex];
 
     console.debug('Gltf frame: ', this.currentMeshIndex);
-    (this.onNext as MeshOnNextCallback)(lastGltfScene, currentGltfScene);
+    if (currentFrame === undefined || currentFrame === this.currentMeshIndex) {
+      (this.onNext as MeshOnNextCallback)(lastGltfScene, currentGltfScene);
+    }
 
     // preload
     this.preloadFrame((this.currentMeshIndex + CONFIG.decoder.gltfPreloadFrameCount) % this.frameCount);
+
+    // currentMeshIndex
+    if (currentFrame !== undefined && currentFrame !== this.currentMeshIndex) {
+      console.log('again'!);
+      this.playNextFrame(currentFrame);
+    } else if (this.buffering) {
+      (document.getElementById('video-player') as HTMLMediaElement).play();
+      this.buffering = false;
+    }
   }
 }

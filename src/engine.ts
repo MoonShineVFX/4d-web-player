@@ -29,12 +29,13 @@ export default class Engine {
   private readonly gl: WebGLRenderingContext;
   private rawTexture: RawTexture | null;
   uniMaterial: THREE.MeshBasicMaterial | null;
+  oldGroup: THREE.Group | null;
 
   constructor() {
     this.scene = new THREE.Scene();
     this.camera = new THREE.PerspectiveCamera(
       CONFIG.engine.cameraFOV,
-      window.innerWidth / window.innerHeight
+      CONFIG.engine.width / CONFIG.engine.height
     );
     this.renderer = new THREE.WebGL1Renderer({antialias: true});
     this.orbitControls = new OrbitControls(this.camera, this.renderer.domElement);
@@ -43,6 +44,8 @@ export default class Engine {
     this.rawTexture = null;
     this.uniMaterial = null;
 
+    this.oldGroup = null;
+
     this.initialize();
   }
 
@@ -50,7 +53,7 @@ export default class Engine {
     // Base
     this.scene.background = new THREE.Color(CONFIG.engine.backgroundColor);
 
-    this.renderer.setSize(window.innerWidth, window.innerHeight);
+    this.renderer.setSize(CONFIG.engine.width, CONFIG.engine.height);
     document.body.prepend(this.renderer.domElement);
     this.camera.position.y = CONFIG.engine.cameraHeightOffset;
     this.camera.position.z = CONFIG.engine.cameraDistance;
@@ -84,14 +87,20 @@ export default class Engine {
 
   replaceSceneGroup(oldGroup: THREE.Group, newGroup: THREE.Group) {
     // Purge unused scene group
-    if (oldGroup) {
-      this.scene.remove(oldGroup);
-      oldGroup.traverse(function(obj: any) {
+    if (this.oldGroup) {
+      this.scene.remove(this.oldGroup);
+      this.oldGroup.traverse(function(obj: any) {
         if(obj.dispose) obj.dispose();
+        if (obj.isMesh) {
+          obj.geometry.dispose();
+        }
       });
+      // this.renderer.renderLists.dispose();
+      // this.renderer.dispose();
     }
 
     this.scene.add(newGroup);
+    this.oldGroup = newGroup;
   }
 
   render() {

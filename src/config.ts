@@ -13,6 +13,8 @@ interface EngineConfig {
   cameraDistance: number;
   cameraHeightOffset: number;
   backgroundColor: number;
+  width: number;
+  height: number;
 }
 
 
@@ -37,7 +39,9 @@ class Config {
       cameraFOV: 60,
       cameraDistance: 0.8,
       cameraHeightOffset: -0.15,
-      backgroundColor: 0x152126
+      backgroundColor: 0x152126,
+      width: window.innerWidth,
+      height: 540
     }
   }
 

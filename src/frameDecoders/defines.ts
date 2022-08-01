@@ -3,7 +3,7 @@ import * as THREE from 'three';
 
 export type MeshOnNextCallback = (oldGroup: THREE.Group, newGroup: THREE.Group) => void;
 
-export type TextureOnNextCallback = (imageData: TexImageSource | VideoFrame) => void;
+export type TextureOnNextCallback = (imageData: TexImageSource | VideoFrame, frameNumber: number) => void;
 
 type NextCallback = MeshOnNextCallback | TextureOnNextCallback;
 
@@ -21,12 +21,22 @@ export class FrameDecoder {
 
   protected isReady: boolean;
 
+  constructor() {
+    this.frameCount = 0;
+    this.isReady = false;
+    this.onLoading  = null;
+    this.openResolve = null;
+    this.openReject = null;
+  }
+
   isNextFrameAvailable(): boolean { return undefined };
   playNextFrame() {};
   open(source: any): Promise<string> { return undefined };
 }
 
 export class MeshFrameDecoder extends FrameDecoder {
+  playNextFrame() {};
+  override playNextFrame(currentFrame: number) {};
 }
 
 export class TextureFrameDecoder extends FrameDecoder {

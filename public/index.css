@@ -13,3 +13,20 @@ body {
     font-size: 24px;
     color: white;
 }
+
+video {
+    width: 512px;
+    display: none;
+}
+
+button {
+    width: 200px;
+    height: 200px;
+    display: inline;
+}
+
+h1 {
+    display: inline;
+    font-size: 12px;
+    margin-left: 0px;
+}
