@@ -1,0 +1,14 @@
+body {
+  background-color: gray;
+}
+
+#fourd-web-viewport {
+  display: block;
+  width: 100%;
+  height: 60vh;
+}
+
+#fourd-web-texture {
+  width: 100%;
+  height: 30vh;
+}

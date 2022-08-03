@@ -1,10 +1,4 @@
-export function nextWithLoop(currentIndex: number, count: number): number {
-  return (currentIndex + 1) % count;
-}
-
-
-export function pad(num: number, length: number, padString: string | null): string {
-  padString = padString || '0';
+export function pad(num: number, length: number, padString: string = '0'): string {
   const nString: string = num + '';
   if (nString.length >= length) return nString;
   return new Array(length - nString.length + 1).join(padString) + nString;

@@ -2,7 +2,7 @@ import * as THREE from 'three';
 
 import { OrbitControls } from './external/orbitControls';
 
-import CONFIG from './config';
+import CONFIG from './Config';
 
 
 class RawTexture extends THREE.Texture {
@@ -19,7 +19,7 @@ class RawTexture extends THREE.Texture {
 }
 
 
-export default class Engine {
+export default class FourdEngine {
   private readonly scene: THREE.Scene;
   private readonly camera: THREE.PerspectiveCamera;
   private renderer: THREE.WebGL1Renderer;
@@ -28,23 +28,30 @@ export default class Engine {
 
   private readonly gl: WebGLRenderingContext;
   private rawTexture: RawTexture | null;
-  uniMaterial: THREE.MeshBasicMaterial | null;
-  oldGroup: THREE.Group | null;
 
-  constructor() {
+  private currentMesh: THREE.Group | null;
+
+  uniMaterial: THREE.MeshBasicMaterial | null;
+
+  constructor(elementID: string) {
+    const canvasDom = document.getElementById(elementID)
     this.scene = new THREE.Scene();
     this.camera = new THREE.PerspectiveCamera(
       CONFIG.engine.cameraFOV,
-      CONFIG.engine.width / CONFIG.engine.height
+      canvasDom.offsetWidth / canvasDom.offsetHeight
     );
-    this.renderer = new THREE.WebGL1Renderer({antialias: true});
+    this.renderer = new THREE.WebGL1Renderer({
+      antialias: true,
+      canvas: canvasDom
+    });
+    this.renderer.setSize(canvasDom.offsetWidth, canvasDom.offsetHeight);
     this.orbitControls = new OrbitControls(this.camera, this.renderer.domElement);
 
     this.gl = this.renderer.domElement.getContext('webgl');
     this.rawTexture = null;
     this.uniMaterial = null;
 
-    this.oldGroup = null;
+    this.currentMesh = null;
 
     this.initialize();
   }
@@ -52,9 +59,6 @@ export default class Engine {
   private initialize() {
     // Base
     this.scene.background = new THREE.Color(CONFIG.engine.backgroundColor);
-
-    this.renderer.setSize(CONFIG.engine.width, CONFIG.engine.height);
-    document.body.prepend(this.renderer.domElement);
     this.camera.position.y = CONFIG.engine.cameraHeightOffset;
     this.camera.position.z = CONFIG.engine.cameraDistance;
 
@@ -85,22 +89,21 @@ export default class Engine {
     }
   }
 
-  replaceSceneGroup(oldGroup: THREE.Group, newGroup: THREE.Group) {
+  updateMesh(mesh: THREE.Group) {
+    this.scene.add(mesh);
+
     // Purge unused scene group
-    if (this.oldGroup) {
-      this.scene.remove(this.oldGroup);
-      this.oldGroup.traverse(function(obj: any) {
+    if (this.currentMesh) {
+      this.scene.remove(this.currentMesh);
+      this.currentMesh.traverse(function(obj: any) {
         if(obj.dispose) obj.dispose();
         if (obj.isMesh) {
           obj.geometry.dispose();
         }
       });
-      // this.renderer.renderLists.dispose();
-      // this.renderer.dispose();
     }
 
-    this.scene.add(newGroup);
-    this.oldGroup = newGroup;
+    this.currentMesh = mesh;
   }
 
   render() {

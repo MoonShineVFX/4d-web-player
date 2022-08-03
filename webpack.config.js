@@ -2,6 +2,7 @@ const CopyWebpackPlugin = require("copy-webpack-plugin");
 const HtmlWebpackPlugin = require('html-webpack-plugin');
 const path = require('path');
 
+
 module.exports = {
   mode: 'development',
   devServer: {
@@ -14,7 +15,7 @@ module.exports = {
   },
   entry: {
     fourdRecPlayer: './src/index.ts',
-    test: './src/test.ts'
+    dev: './src/dev/dev.ts'
   },
   devtool: 'source-map',
   module: {
@@ -30,6 +31,10 @@ module.exports = {
           }
         ],
         exclude: /node_modules/,
+      },
+      {
+        test: /\.css$/,
+        use: ['style-loader', 'css-loader'],
       },
     ],
   },
@@ -57,7 +62,7 @@ module.exports = {
       patterns: ['public']
     }),
     new HtmlWebpackPlugin({
-      template: './public/test-template.html'
+      template: './public/dev.html'
     })
   ],
   output: {
