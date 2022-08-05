@@ -72,7 +72,7 @@ export default class FourdEngine {
     this.orbitControls.target.y = CONFIG.engine.cameraHeightOffset;
   }
 
-  updateRawTexture(imageData: TexImageSource | VideoFrame) {
+  private updateRawTexture(imageData: TexImageSource | VideoFrame) {
     const gl = this.gl;
 
     if (!this.rawTexture.isInitialize) {
@@ -89,7 +89,7 @@ export default class FourdEngine {
     }
   }
 
-  updateMesh(mesh: THREE.Group) {
+  private updateMesh(mesh: THREE.Group) {
     this.scene.add(mesh);
 
     // Purge unused scene group
@@ -104,6 +104,11 @@ export default class FourdEngine {
     }
 
     this.currentMesh = mesh;
+  }
+
+  updateFrame(texture: HTMLVideoElement, mesh: THREE.Group) {
+    this.updateRawTexture(texture);
+    this.updateMesh(mesh);
   }
 
   render() {

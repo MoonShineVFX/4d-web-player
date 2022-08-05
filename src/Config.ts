@@ -1,5 +1,6 @@
 class Config {
   private static _instance: Config;
+
   engine: {
     cameraFOV: number;
     cameraDistance: number;
@@ -11,7 +12,11 @@ class Config {
   };
   mesh: {
     dracoPath: string;
-    bufferFrameCount: number;
+    bufferWhileWaitingCount: number;
+    bufferWhilePlayingCount: number;
+  }
+  player: {
+    fps: number;
   }
 
   private constructor() {
@@ -26,7 +31,11 @@ class Config {
     };
     this.mesh = {
       dracoPath: '/draco/',
-      bufferFrameCount: 100
+      bufferWhileWaitingCount: 100,
+      bufferWhilePlayingCount: 1
+    };
+    this.player = {
+      fps: 30
     }
   }
 

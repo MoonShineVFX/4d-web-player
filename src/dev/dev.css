@@ -2,13 +2,29 @@ body {
   background-color: gray;
 }
 
+#status {
+  position: absolute;
+  width: 100%;
+}
+
+#progress {
+  height: 8px;
+  background-color: white;
+  opacity: 0.8;
+}
+#progress.loading {
+  background-color: darksalmon;
+}
+
+#loading {
+  margin: 0;
+  padding: 8px;
+  color: white;
+  font-size: 40px;
+}
+
 #fourd-web-viewport {
   display: block;
   width: 100%;
-  height: 60vh;
-}
-
-#fourd-web-texture {
-  width: 100%;
-  height: 30vh;
+  height: 100vh;
 }

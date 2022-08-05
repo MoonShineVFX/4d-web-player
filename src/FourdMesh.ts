@@ -27,7 +27,7 @@ interface MeshFrame {
 
 
 export default class FourdMesh {
-  private currentFrameNumber: number;
+  private playedFrameNumber: number;
 
   private readonly material: THREE.Material;
 
@@ -37,19 +37,22 @@ export default class FourdMesh {
   private loader: GLTFLoader;
   private readonly dracoLoader: DRACOLoader;
 
-  private isWaitingBuffer: boolean;
+  private onLoadingStateChanged: (loadingState: boolean) => void;
+  isLoading: boolean;
 
   constructor(
     material: THREE.Material = null,
-    urls: string[]
+    urls: string[],
+    onLoadingStateChanged: (loadingState: boolean) => void
   ) {
-    this.currentFrameNumber = 0;
+    this.playedFrameNumber = 0;
     this.material = material;
 
     this.frames = [];
     this.urls = urls;
 
-    this.isWaitingBuffer = false;
+    this.isLoading = true;
+    this.onLoadingStateChanged = onLoadingStateChanged;
 
     // Build frames
     for (let i = 0; i < this.urls.length; i++) {
@@ -63,13 +66,7 @@ export default class FourdMesh {
     this.loader.setDRACOLoader(this.dracoLoader);
 
     // Load
-    this.load();
-  }
-
-  private load() {
-    for (let i = 0; i < CONFIG.mesh.bufferFrameCount + 1; i++) {
-      this.preloadFrame(i);
-    }
+    this.preloadFrames();
   }
 
   private preloadFrame(frameNumber: number) {
@@ -85,6 +82,12 @@ export default class FourdMesh {
         (gltf: GltfData) => this.onGltfLoaded(frameNumber, gltf)
       );
     });
+  }
+
+  private preloadFrames() {
+    for (let i = 0; i < CONFIG.mesh.bufferWhileWaitingCount + 1; i++) {
+      this.preloadFrame((this.playedFrameNumber + i) % this.frames.length);
+    }
   }
 
   private onGltfLoaded(frameNumber: number, gltf: GltfData) {
@@ -103,59 +106,77 @@ export default class FourdMesh {
       mesh: gltf.scene,
       state: MeshFrameState.Loaded
     };
+
+    if (this.isLoading && this.isBufferedEnough()) {
+      this.setLoadingState(false);
+    }
   }
 
-  isBufferedEnough(frameNumber: number = undefined): boolean {
-    const enoughRatio = this.isWaitingBuffer ? 1.0 : 0.2;
-    const checkFrameNumber = frameNumber || this.currentFrameNumber;
-    for (let i = 0; i < Math.ceil(CONFIG.mesh.bufferFrameCount * enoughRatio); i++) {
-      if (this.frames[(checkFrameNumber + i) % this.frames.length].state !== MeshFrameState.Loaded) return false;
+  private setLoadingState(loadingState: boolean) {
+    if (loadingState === this.isLoading) return;
+    this.isLoading = loadingState;
+    this.onLoadingStateChanged(loadingState);
+  }
+
+  private isBufferedEnough(): boolean {
+    const enoughCount = this.isLoading ? CONFIG.mesh.bufferWhileWaitingCount : CONFIG.mesh.bufferWhilePlayingCount;
+    for (let i = 0; i < enoughCount; i++) {
+      if (
+        this.frames[(this.playedFrameNumber + i) % this.frames.length].state !== MeshFrameState.Loaded
+      ) return false;
     }
-    if (this.isWaitingBuffer) this.isWaitingBuffer = false;
+    if (this.isLoading) this.setLoadingState(false);
     return true;
   }
 
   playFrame(playFrameNumber: number): THREE.Group | undefined {
-    // Check if frame is continue
-    if (playFrameNumber !== (this.currentFrameNumber + 1) % this.frames.length && playFrameNumber !== this.currentFrameNumber) {
-      // Purge unused cache
-      const keepStartFrameNumber = playFrameNumber;
-      const keepEndFrameNumber = (playFrameNumber + CONFIG.mesh.bufferFrameCount) % this.frames.length;
-      let purgeRanges: [number, number][] = [];
-      if (keepEndFrameNumber < keepStartFrameNumber) {
-        purgeRanges.push([keepEndFrameNumber + 1, keepStartFrameNumber]);
-      } else {
-        purgeRanges.push([0, keepStartFrameNumber]);
-        purgeRanges.push([keepEndFrameNumber + 1, this.frames.length]);
-      }
-      purgeRanges.forEach(purgeRange => {
-        const [startFrameNumber, EndFrameNumber] = purgeRange;
-        for (let i = startFrameNumber; i < EndFrameNumber; i++) {
-          this.frames[i] = {mesh: null, state: MeshFrameState.Empty};
+    // Bypass when loading
+    if (this.isLoading) return undefined;
+
+    // Purge played frame
+    if (this.playedFrameNumber !== playFrameNumber) {
+      this.frames[this.playedFrameNumber] = {mesh: null, state: MeshFrameState.Empty};
+
+      // Check if frame is continue
+      if (playFrameNumber !== (this.playedFrameNumber + 1) % this.frames.length) {
+        // Purge unused cache
+        const keepStartFrameNumber = playFrameNumber;
+        const keepEndFrameNumber = (playFrameNumber + CONFIG.mesh.bufferWhileWaitingCount) % this.frames.length;
+        let purgeRanges: [number, number][] = [];
+        if (keepEndFrameNumber < keepStartFrameNumber) {
+          purgeRanges.push([keepEndFrameNumber + 1, keepStartFrameNumber]);
+        } else {
+          purgeRanges.push([0, keepStartFrameNumber]);
+          purgeRanges.push([keepEndFrameNumber + 1, this.frames.length]);
         }
-      });
+        purgeRanges.forEach(purgeRange => {
+          const [startFrameNumber, EndFrameNumber] = purgeRange;
+          for (let i = startFrameNumber; i < EndFrameNumber; i++) {
+            this.frames[i] = {mesh: null, state: MeshFrameState.Empty};
+          }
+        });
+
+        // Preload frames
+        this.preloadFrames();
+      }
+
+      // Set played frame
+      this.playedFrameNumber = playFrameNumber;
     }
 
     // Check buffer
-    if (!this.isBufferedEnough(playFrameNumber)) {
+    if (!this.isBufferedEnough()) {
       // Preload count must +1 because this function will execute from next frame (video.play())
-      for (let i = 0; i < CONFIG.mesh.bufferFrameCount + 1; i++) {
-        this.preloadFrame((playFrameNumber + i) % this.frames.length);
-      }
-      this.isWaitingBuffer = true;
-      console.warn('Mesh buffer not enough', playFrameNumber);
+      this.preloadFrames();
+      this.setLoadingState(true);
+      console.warn('Mesh buffer not enough', this.playedFrameNumber);
       return undefined;
     }
 
     // Get meshFrame
-    if (this.currentFrameNumber !== playFrameNumber) {
-      // this.frames[this.currentFrameNumber] = {mesh: null, state: MeshFrameState.Empty};
-      this.currentFrameNumber = playFrameNumber;
-    }
-    const currentMeshFrame = this.frames[this.currentFrameNumber];
-    this.preloadFrame((this.currentFrameNumber + CONFIG.mesh.bufferFrameCount - 1) % this.frames.length);
+    const currentMeshFrame = this.frames[this.playedFrameNumber];
+    this.preloadFrame((this.playedFrameNumber + CONFIG.mesh.bufferWhileWaitingCount - 1) % this.frames.length);
 
-    console.debug('Gltf frame: ', this.currentFrameNumber);
     return currentMeshFrame.mesh;
   }
 }
