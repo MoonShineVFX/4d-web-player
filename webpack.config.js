@@ -7,15 +7,14 @@ module.exports = {
   mode: 'development',
   devServer: {
     open: true,
-    port: 5500,
+    port: 3000,
     static: {
       directory: './resource',
       publicPath: '/resource'
     }
   },
   entry: {
-    fourdRecPlayer: './src/index.ts',
-    dev: './src/dev/dev.ts'
+    fourdPlayer: './src/react/index.ts'
   },
   devtool: 'source-map',
   module: {
@@ -62,12 +61,12 @@ module.exports = {
       patterns: ['public']
     }),
     new HtmlWebpackPlugin({
-      template: './public/dev.html'
+      template: './src/react/index.html'
     })
   ],
   output: {
     filename: '[name].[contenthash].js',
-    path: path.resolve(__dirname, 'dist'),
+    path: path.resolve(__dirname, 'build'),
     clean: true
   }
 };

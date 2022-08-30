@@ -1,6 +1,7 @@
 import FourdPlayer from '../FourdPlayer';
 import {pad} from '../utility';
-import './dev.css';
+import './normalize.css';
+import './index.css';
 
 
 // Make urls

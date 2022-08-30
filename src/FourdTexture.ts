@@ -24,8 +24,6 @@ export default class FourdTexture {
     this.videoDom.playsInline = true;
     this.videoDom.loop = true;
     this.videoDom.style.display = 'none';
-    // this.videoDom.style.width = '300px';
-    // this.videoDom.controls = true;
 
     const srcDom = document.createElement('source');
     srcDom.setAttribute('src', resourceURL);
