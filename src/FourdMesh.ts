@@ -1,7 +1,7 @@
 import * as THREE from 'three';
 
-import { GLTFLoader } from './external/GLTFLoader';
-import { DRACOLoader } from './external/DRACOLoader';
+import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
+import { DRACOLoader } from 'three/examples/jsm/loaders/DRACOLoader.js';
 
 import CONFIG from './Config';
 

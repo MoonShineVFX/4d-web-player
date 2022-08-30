@@ -1,4 +1,3 @@
-const CopyWebpackPlugin = require("copy-webpack-plugin");
 const HtmlWebpackPlugin = require('html-webpack-plugin');
 const path = require('path');
 
@@ -14,21 +13,14 @@ module.exports = {
     }
   },
   entry: {
-    fourdPlayer: './src/react/index.ts'
+    fourdPlayer: './src/react/index.tsx'
   },
   devtool: 'source-map',
   module: {
     rules: [
       {
-        test: /\.tsx?$/,
-        use: [
-          {
-            loader: 'ts-loader',
-            options: {
-              transpileOnly: true
-            }
-          }
-        ],
+        test: /\.(ts|js)x?$/,
+        loader: 'babel-loader',
         exclude: /node_modules/,
       },
       {
@@ -47,19 +39,11 @@ module.exports = {
           name: 'vendor',
           test: /[\\/]node_modules[\\/]/,
           chunks: 'all'
-        },
-        external: {
-          name: 'external',
-          test: /[\\/]src[\\/]external.*/,
-          chunks: 'all'
         }
       }
     }
   },
   plugins: [
-    new CopyWebpackPlugin({
-      patterns: ['public']
-    }),
     new HtmlWebpackPlugin({
       template: './src/react/index.html'
     })

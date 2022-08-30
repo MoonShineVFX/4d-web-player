@@ -1,24 +1,30 @@
 {
   "name": "4drec-player",
-  "version": "1.0.0",
+  "version": "0.0.1",
   "main": "src/index.ts",
   "repository": "https://github.com/MoonShineVFX/4d-web-player.git",
   "author": "eli.hung <mrhchief@gmail.com>",
   "license": "MIT",
   "devDependencies": {
+    "@babel/core": "^7.18.13",
+    "@babel/preset-env": "^7.18.10",
+    "@babel/preset-react": "^7.18.6",
+    "@babel/preset-typescript": "^7.18.6",
     "@types/dom-webcodecs": "^0.1.4",
     "@types/three": "^0.139.0",
-    "copy-webpack-plugin": "^10.2.4",
+    "babel-loader": "^8.2.5",
     "css-loader": "^6.7.1",
     "html-webpack-plugin": "^5.5.0",
     "style-loader": "^3.3.1",
-    "ts-loader": "^9.2.8",
-    "typescript": "^4.6.3",
     "webpack": "^5.72.0",
     "webpack-cli": "^4.9.2",
     "webpack-dev-server": "^4.8.1"
   },
   "dependencies": {
+    "@types/react": "^18.0.17",
+    "@types/react-dom": "^18.0.6",
+    "react": "^18.2.0",
+    "react-dom": "^18.2.0",
     "three": "^0.139.2"
   },
   "scripts": {
