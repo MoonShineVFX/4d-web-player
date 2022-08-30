@@ -1,12 +1,15 @@
 const HtmlWebpackPlugin = require('html-webpack-plugin');
 const path = require('path');
+const ReactRefreshPlugin = require('@pmmmwh/react-refresh-webpack-plugin');
+
+const isDevelopment = process.env.NODE_ENV !== 'production';
 
 
 module.exports = {
-  mode: 'development',
+  mode: isDevelopment ? 'development' : 'production',
   devServer: {
-    open: true,
-    port: 3000,
+    hot: true,
+    client: { overlay: false },
     static: {
       directory: './resource',
       publicPath: '/resource'
@@ -20,8 +23,16 @@ module.exports = {
     rules: [
       {
         test: /\.(ts|js)x?$/,
-        loader: 'babel-loader',
-        exclude: /node_modules/,
+        include: path.join(__dirname, 'src'),
+        use: 'babel-loader',
+      },
+      {
+        test: /\.less$/i,
+        use: [
+          "style-loader",
+          "css-loader",
+          "less-loader",
+        ],
       },
       {
         test: /\.css$/,
@@ -44,10 +55,11 @@ module.exports = {
     }
   },
   plugins: [
+    isDevelopment && new ReactRefreshPlugin(),
     new HtmlWebpackPlugin({
       template: './src/react/index.html'
-    })
-  ],
+    }),
+  ].filter(Boolean),
   output: {
     filename: '[name].[contenthash].js',
     path: path.resolve(__dirname, 'build'),

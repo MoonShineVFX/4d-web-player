@@ -1,6 +1,5 @@
 {
   "compilerOptions": {
-    "outDir": "dist",
     "sourceMap": true,
     "noImplicitAny": true,
     "module": "ESNext",
@@ -9,10 +8,10 @@
     "allowJs": true,
     "moduleResolution": "node",
     "esModuleInterop": true,
-    "declaration": true
+    "lib": ["dom", "dom.iterable", "esnext"]
   },
   "include": [
-    "src/**/*.ts",
+    "src",
     "src/global.d.ts"
   ]
 }
