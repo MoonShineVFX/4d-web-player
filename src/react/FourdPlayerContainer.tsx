@@ -1,6 +1,6 @@
 import React, {useEffect, useRef, useState} from 'react';
-import FourdPlayer from '../FourdPlayer';
-import {FourdPlayerState} from '../FourdPlayer';
+import FourdPlayer, {FourdPlayerState} from '../FourdPlayer';
+import FourdPlayerController from './FourdPlayerController';
 import './FourdPlayerContainer.less';
 
 import {pad} from '../utility';
@@ -40,19 +40,8 @@ export default function FourdPlayerContainer(): JSX.Element {
     setFourdPlayer(player);
   }, [canvasRef])
 
-  // Dynamic style
-  const dynamicStyle = {
-    progressBar: {
-      backgroundColor: playerState.isLoading ? 'darksalmon' : 'white',
-      width: (playerState.currentTime / playerState.duration) * 100 + '%'
-    }
-  }
-
   return <div className='fourd-player-container'>
-    <div className="player-status">
-      <div style={dynamicStyle.progressBar} className="loading"></div>
-      {playerState.isLoading && <p>Loading</p>}
-    </div>
+    <FourdPlayerController playerState={playerState} />
     <canvas ref={canvasRef}></canvas>
   </div>
 }
