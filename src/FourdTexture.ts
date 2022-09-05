@@ -1,26 +1,41 @@
 import CONFIG from './Config';
 
 
-type FrameDecodedCallback = (frameNumber: number, totalFrameCount: number, videoDom: HTMLVideoElement) => boolean;
+type FrameDecodedCallback = (frameNumber: number, videoDom: HTMLVideoElement) => boolean;
+
+export interface TextureState {
+  isLoading: boolean;
+  isPlaying: boolean;
+  duration: number;
+  currentTime: number;
+  volume: number;
+  muted: boolean;
+}
 
 
 export default class FourdTexture {
   private videoDom: HTMLVideoElement;
   private onFrameDecoded: FrameDecodedCallback;
-  private onLoadingStateChanged: (loadingState: boolean) => void;
+  private onStateChanged: (textureState: TextureState) => void;
   private playedFrameNumber: number | undefined;
-  private totalFrameCount: number | undefined;
 
-  isLoading: boolean;
+  state: TextureState;
 
   constructor(resourceURL: string,
               onFrameDecoded: FrameDecodedCallback,
-              onLoadingStateChanged: (loadingState: boolean) => void) {
-    this.isLoading = true;
+              onStateChanged: (textureState: TextureState) => void) {
+    this.state = {
+      isLoading: true,
+      isPlaying: false,
+      duration: 0,
+      currentTime: 0,
+      volume: 1.0,
+      muted: false
+    };
 
     // HTML Dom
     this.videoDom = document.createElement('video');
-    this.videoDom.muted = true;
+    this.videoDom.muted = true; // debug autoplay
     this.videoDom.playsInline = true;
     this.videoDom.loop = true;
     this.videoDom.style.display = 'none';
@@ -33,28 +48,87 @@ export default class FourdTexture {
     document.body.append(this.videoDom);
 
     // Event
-    this.videoDom.addEventListener('durationchange', () => {
-      this.totalFrameCount =  Math.round(this.videoDom.duration * CONFIG.texture.fps);
+    const listenEvents = [
+      'pause', 'playing', 'waiting', 'canplay', 'seeking', 'seeked',
+      'durationchange', 'timeupdate', 'volumechange'
+    ];
+    listenEvents.forEach(eventName => {
+      this.videoDom.addEventListener(eventName, event => this.handleVideoEvent(event));
     });
-    this.videoDom.addEventListener('seeked', () => this.setLoadingState(false));
-    this.videoDom.addEventListener('playing', () => {
-      this.videoDom.requestVideoFrameCallback(
-        (now, metadata) => {this.videoFrameCallback(metadata)}
-      );
-      this.setLoadingState(false);
-    });
-    this.videoDom.addEventListener('waiting', () => this.setLoadingState(true));
-    this.videoDom.addEventListener('seeking', () => this.setLoadingState(true));
 
     // Callback
-    this.onLoadingStateChanged = onLoadingStateChanged;
+    this.onStateChanged = onStateChanged;
     this.onFrameDecoded = onFrameDecoded;
   }
 
-  setLoadingState(loadingState: boolean) {
-    if (loadingState === this.isLoading) return;
-    this.isLoading = loadingState;
-    this.onLoadingStateChanged(loadingState);
+  handleVideoEvent(event: Event) {
+    switch(event.type) {
+      case 'canplay':
+        this.setState({
+          ...this.state,
+          isPlaying: this.videoDom.paused,
+          isLoading: false,
+          currentTime: this.videoDom.currentTime,
+          volume: this.videoDom.volume,
+          muted: this.videoDom.muted,
+          duration: this.videoDom.duration
+        });
+        break;
+      case 'timeupdate':
+        this.setState({
+          ...this.state,
+          currentTime: this.videoDom.currentTime
+        });
+        break;
+      case 'durationchange':
+        this.setState({
+          ...this.state,
+          duration: this.videoDom.duration
+        })
+        break;
+      case 'playing':
+      case 'seeked':
+        if (event.type === 'playing') {
+          this.videoDom.requestVideoFrameCallback(
+            (now, metadata) => {this.videoFrameCallback(metadata)}
+          );
+        }
+        this.setState({
+          ...this.state,
+          isLoading: false,
+          isPlaying: true,
+          currentTime: this.videoDom.currentTime
+        })
+        break;
+      case 'pause':
+        this.setState({
+          ...this.state,
+          isPlaying: false
+        });
+        break;
+      case 'waiting':
+      case 'seeking':
+        this.setState({
+          ...this.state,
+          isLoading: true
+        });
+        break;
+      case 'volumechange':
+        this.setState({
+          ...this.state,
+          volume: this.videoDom.volume,
+          muted: this.videoDom.muted
+        });
+        break;
+      default:
+        console.warn(event.type);
+    }
+  }
+
+  setState(state: TextureState) {
+    if (state === this.state) return;
+    this.state = state;
+    this.onStateChanged(this.state);
   }
 
   videoFrameCallback(metadata: VideoFrameMetadata) {
@@ -66,7 +140,7 @@ export default class FourdTexture {
     }
     this.playedFrameNumber = currentFrame;
 
-    const success = this.onFrameDecoded(currentFrame, this.totalFrameCount, this.videoDom);
+    const success = this.onFrameDecoded(currentFrame, this.videoDom);
     if (!success) {
       this.videoDom.pause();
       return;
@@ -80,7 +154,7 @@ export default class FourdTexture {
   play() {
     if (!this.videoDom.paused) return;
     this.videoDom.play().then(
-      () => console.log('play'),
+      () => console.log('play texture'),
       error => console.warn(error)
     );
   }

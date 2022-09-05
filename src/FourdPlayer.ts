@@ -3,6 +3,11 @@ import FourdEngine from './FourdEngine';
 import FourdMesh from './FourdMesh';
 import CONFIG from './Config';
 
+import {TextureState} from './FourdTexture';
+
+
+export type FourdPlayerState = TextureState;
+
 
 export default class FourdPlayer {
   private engine: FourdEngine;
@@ -13,36 +18,34 @@ export default class FourdPlayer {
   private renderDuration: number;
 
   private isLoading: boolean;
-  private onLoadingStateChanged: (loadingState: boolean) => void;
 
-  private onPlaying: (frameNumber: number, totalFrame: number) => void | null = null;
+  private onStateChanged: (playerState: FourdPlayerState) => void;
 
   constructor(
-    engineElementId: string,
+    canvasDom: HTMLCanvasElement,
     textureUrl: string,
     meshUrls: string[],
-    onLoadingStateChanged: (loadingState: boolean) => void | null = null,
-    onPlaying: (frameNumber: number, totalFrame: number) => void | null = null
+    onStateChanged: (playerState: FourdPlayerState) => void
   ) {
     this.lastTimeStamp = null;
     this.renderDuration = 1000 / CONFIG.player.fps;
+
     this.isLoading = true;
-    this.onLoadingStateChanged = onLoadingStateChanged;
 
-    this.onPlaying = onPlaying;
+    this.onStateChanged = onStateChanged;
 
-    this.engine = new FourdEngine(engineElementId);
+    this.engine = new FourdEngine(canvasDom);
     this.mesh = new FourdMesh(
       this.engine.uniMaterial,
       meshUrls,
-      state => this.onMeshLoadingStateChanged(state)
+      () => this.onMeshLoadingStateChanged()
     );
     this.texture = new FourdTexture(
       textureUrl,
-      (frameNumber: number, totalFrameCount: number, videoDom: HTMLVideoElement) => {
-        return this.onTextureFrameDecoded(frameNumber, totalFrameCount, videoDom)
+      (frameNumber: number, videoDom: HTMLVideoElement) => {
+        return this.onTextureFrameDecoded(frameNumber, videoDom)
       },
-      (loadingState: boolean) => this.onTextureLoadingStateChanged(loadingState)
+      () => this.onTextureStateChanged()
     );
 
     this.animate();
@@ -62,36 +65,40 @@ export default class FourdPlayer {
     }
   }
 
-  onTextureFrameDecoded(frameNumber: number, totalFrameCount: number, videoDom: HTMLVideoElement): boolean {
-    console.debug('Play frame: ', frameNumber, '/', totalFrameCount);
+  onTextureFrameDecoded(frameNumber: number, videoDom: HTMLVideoElement): boolean {
+    console.debug('Play frame: ', frameNumber);
 
     const frameMesh = this.mesh.playFrame(frameNumber);
     if (!frameMesh) return false;
 
     this.engine.updateFrame(videoDom, frameMesh);
-    if (this.onPlaying) this.onPlaying(frameNumber, totalFrameCount);
-
     return true
   }
 
-  onMeshLoadingStateChanged(loadingState: boolean) {
-    this.checkLoadingState();
-    if (loadingState) return;
-    this.texture.play();
-    console.log('Mesh buffer completed.');
+  onMeshLoadingStateChanged() {
+    this.updateLoadingState();
+    console.debug('Mesh buffer completed.');
   }
 
-  onTextureLoadingStateChanged(loadingState: boolean) {
-    this.checkLoadingState();
+  onTextureStateChanged() {
+    this.updateLoadingState();
+    this.emitStateChanged();
   }
 
-  checkLoadingState() {
-    this.setLoadingState(this.mesh.isLoading || this.texture.isLoading);
-  }
-
-  setLoadingState(loadingState: boolean) {
+  updateLoadingState() {
+    const loadingState = this.mesh.isLoading || this.texture.state.isLoading;
     if (loadingState === this.isLoading) return;
     this.isLoading = loadingState;
-    if (this.onLoadingStateChanged) this.onLoadingStateChanged(loadingState);
+    if (!this.isLoading) this.texture.play();
+    this.emitStateChanged();
+  }
+
+  emitStateChanged() {
+    if (!this.onStateChanged) return;
+
+    this.onStateChanged({
+      ...this.texture.state,
+      isLoading: this.isLoading
+    });
   }
 }

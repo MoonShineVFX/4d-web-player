@@ -33,8 +33,7 @@ export default class FourdEngine {
 
   uniMaterial: THREE.MeshBasicMaterial | null;
 
-  constructor(elementID: string) {
-    const canvasDom = document.getElementById(elementID)
+  constructor(canvasDom: HTMLCanvasElement) {
     this.scene = new THREE.Scene();
     this.camera = new THREE.PerspectiveCamera(
       CONFIG.engine.cameraFOV,

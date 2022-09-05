@@ -30,8 +30,7 @@ class Config {
       fps: 30
     };
     this.mesh = {
-      // dracoPath: '/draco/',
-      dracoPath: 'https://www.gstatic.com/draco/versioned/decoders/1.5.3/',
+      dracoPath: 'https://www.gstatic.com/draco/versioned/decoders/1.5.3/', // '/draco/' for local
       bufferWhileWaitingCount: 100,
       bufferWhilePlayingCount: 1
     };

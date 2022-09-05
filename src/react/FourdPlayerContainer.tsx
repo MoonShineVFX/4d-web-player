@@ -1,16 +1,27 @@
-import React, {useEffect, useState} from 'react';
+import React, {useEffect, useRef, useState} from 'react';
 import FourdPlayer from '../FourdPlayer';
+import {FourdPlayerState} from '../FourdPlayer';
+import './FourdPlayerContainer.less';
+
 import {pad} from '../utility';
 
 
 export default function FourdPlayerContainer(): JSX.Element {
   // Hooks
   const [fourdPlayer, setFourdPlayer] = useState<FourdPlayer>(null);
-  const [playProgress, setPlayProgress] = useState(0);
-  const [isLoading, setIsLoading] = useState(true);
+  const [playerState, setPlayerState] = useState<FourdPlayerState>({
+    isLoading: true,
+    isPlaying: false,
+    duration: 0,
+    currentTime: 0,
+    volume: 1.0,
+    muted: false
+  });
+  const canvasRef = useRef<HTMLCanvasElement>(null);
 
   useEffect(() => {
     if (fourdPlayer !== null) return;
+    if (!canvasRef) return;
 
     // Make urls
     let meshUrls = []
@@ -18,33 +29,30 @@ export default function FourdPlayerContainer(): JSX.Element {
       meshUrls.push(`/resource/mi/gltf_mini_drc/${pad(i, 4)}.glb`);
     }
 
-    // Debug UI
-    const handleLoadingState = (loadingState: boolean) => setIsLoading(loadingState);
-    const handlePlaying = (frameNumber: number, totalFrame: number) => setPlayProgress(frameNumber / totalFrame);
+    const handlePlayerState = (playerState: FourdPlayerState) => setPlayerState(playerState);
 
     const player = new FourdPlayer(
-      'fourd-web-viewport',
+      canvasRef.current,
       '/resource/mi/texture_2k.mp4',
       meshUrls,
-      handleLoadingState,
-      handlePlaying
+      handlePlayerState
     );
     setFourdPlayer(player);
-  }, [])
+  }, [canvasRef])
 
   // Dynamic style
   const dynamicStyle = {
     progressBar: {
-      backgroundColor: isLoading ? 'darksalmon' : 'white',
-      width: playProgress * 100 + '%'
+      backgroundColor: playerState.isLoading ? 'darksalmon' : 'white',
+      width: (playerState.currentTime / playerState.duration) * 100 + '%'
     }
   }
 
-  return <div>
-    <div id="fourd-player-status">
+  return <div className='fourd-player-container'>
+    <div className="player-status">
       <div style={dynamicStyle.progressBar} className="loading"></div>
-      {isLoading && <p>Loading</p>}
+      {playerState.isLoading && <p>Loading</p>}
     </div>
-    <canvas id="fourd-web-viewport"></canvas>
+    <canvas ref={canvasRef}></canvas>
   </div>
 }
