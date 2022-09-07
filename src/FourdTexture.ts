@@ -35,7 +35,7 @@ export default class FourdTexture {
 
     // HTML Dom
     this.videoDom = document.createElement('video');
-    this.videoDom.muted = true; // debug autoplay
+    // this.videoDom.muted = true; // debug autoplay
     this.videoDom.playsInline = true;
     this.videoDom.loop = true;
     this.videoDom.style.display = 'none';
@@ -61,12 +61,12 @@ export default class FourdTexture {
     this.onFrameDecoded = onFrameDecoded;
   }
 
-  handleVideoEvent(event: Event) {
+  private handleVideoEvent(event: Event) {
     switch(event.type) {
       case 'canplay':
         this.setState({
           ...this.state,
-          isPlaying: this.videoDom.paused,
+          isPlaying: !this.videoDom.paused,
           isLoading: false,
           currentTime: this.videoDom.currentTime,
           volume: this.videoDom.volume,
@@ -125,13 +125,13 @@ export default class FourdTexture {
     }
   }
 
-  setState(state: TextureState) {
+  private setState(state: TextureState) {
     if (state === this.state) return;
     this.state = state;
     this.onStateChanged(this.state);
   }
 
-  videoFrameCallback(metadata: VideoFrameMetadata) {
+  private videoFrameCallback(metadata: VideoFrameMetadata) {
     const currentFrame = Math.round(metadata.mediaTime * CONFIG.texture.fps);
 
     if (currentFrame === this.playedFrameNumber) {
@@ -154,8 +154,17 @@ export default class FourdTexture {
   play() {
     if (!this.videoDom.paused) return;
     this.videoDom.play().then(
-      () => console.log('play texture'),
+      () => console.debug('play texture'),
       error => console.warn(error)
     );
+  }
+
+  pause() {
+    if (this.videoDom.paused) return;
+    this.videoDom.pause();
+  }
+
+  seek(seekTime: number) {
+    this.videoDom.currentTime = seekTime;
   }
 }

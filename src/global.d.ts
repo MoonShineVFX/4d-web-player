@@ -17,3 +17,10 @@ declare interface HTMLVideoElement extends HTMLMediaElement {
   requestVideoFrameCallback(callback: (now: DOMHighResTimeStamp, metadata: VideoFrameMetadata) => any): VideoFrameRequestCallbackId;
   cancelVideoFrameCallback(handle: VideoFrameRequestCallbackId): void;
 }
+
+declare module '*.svg' {
+  import React = require('react');
+  export const ReactComponent: React.FC<React.SVGProps<SVGSVGElement>>;
+  // const src: string;
+  export default ReactComponent;
+}

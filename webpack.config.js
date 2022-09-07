@@ -8,7 +8,8 @@ const isDevelopment = process.env.NODE_ENV !== 'production';
 module.exports = {
   mode: isDevelopment ? 'development' : 'production',
   devServer: {
-    hot: true,
+    hot: isDevelopment,
+    historyApiFallback: true,
     client: { overlay: false },
     static: {
       directory: './resource',
@@ -21,6 +22,11 @@ module.exports = {
   devtool: 'source-map',
   module: {
     rules: [
+      {
+        test: /\.svg$/i,
+        issuer: /\.[jt]sx?$/,
+        use: ['@svgr/webpack'],
+      },
       {
         test: /\.(ts|js)x?$/,
         include: path.join(__dirname, 'src'),

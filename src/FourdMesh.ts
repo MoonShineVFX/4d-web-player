@@ -25,6 +25,17 @@ interface MeshFrame {
   state: MeshFrameState;
 }
 
+export enum PlayFrameState {
+  Success,
+  Loading,
+  Missing
+}
+
+interface PlayFrameResult {
+  state: PlayFrameState,
+  payload?: THREE.Group
+}
+
 
 export default class FourdMesh {
   private playedFrameNumber: number;
@@ -129,9 +140,14 @@ export default class FourdMesh {
     return true;
   }
 
-  playFrame(playFrameNumber: number): THREE.Group | undefined {
+  playFrame(playFrameNumber: number): PlayFrameResult {
     // Bypass when loading
-    if (this.isLoading) return undefined;
+    if (this.isLoading) return {state: PlayFrameState.Loading};
+
+    if (playFrameNumber >= this.urls.length) {
+      console.warn('Missing Mesh Frame!');
+      return {state: PlayFrameState.Missing};
+    }
 
     // Purge played frame
     if (this.playedFrameNumber !== playFrameNumber) {
@@ -170,13 +186,16 @@ export default class FourdMesh {
       this.preloadFrames();
       this.setLoadingState(true);
       console.warn('Mesh buffer not enough', this.playedFrameNumber);
-      return undefined;
+      return {state: PlayFrameState.Loading};
     }
 
     // Get meshFrame
     const currentMeshFrame = this.frames[this.playedFrameNumber];
     this.preloadFrame((this.playedFrameNumber + CONFIG.mesh.bufferWhileWaitingCount - 1) % this.frames.length);
 
-    return currentMeshFrame.mesh;
+    return {
+      state: PlayFrameState.Success,
+      payload: currentMeshFrame.mesh
+    };
   }
 }
