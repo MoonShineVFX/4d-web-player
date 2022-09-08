@@ -2,8 +2,15 @@ import React, {useEffect, useRef, useState} from 'react';
 import FourdPlayer, {FDPTextureState, FDPConfigMetadata} from '..';
 import FDPlayerUIController from './components/FDPlayerUIController';
 import './FDPlayerUI.less';
+import getFirebaseUrl from './components/firebaseManager';
 
 import {pad} from '../utility';
+
+
+interface Message {
+  className: string,
+  text: string
+}
 
 
 export default function FDPlayerUI(): JSX.Element {
@@ -21,17 +28,29 @@ export default function FDPlayerUI(): JSX.Element {
   const [metadata, setMetadata] = useState<FDPConfigMetadata>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const [isNotPlayedYet, setIsNotPlayedYet] = useState<boolean>(true);
+  const [message, setMessage] = useState<Message>(null);
 
   // Get metadata
   useEffect(() => {
-    const storageHost = 'https://storage.googleapis.com/drec-player.appspot.com';
     const paths = window.location.pathname.split('/');
     const resourceName = paths[paths.length - 1];
-    const thisResourceUrl = storageHost + '/' + resourceName;
-    setResourceUrl(thisResourceUrl);
+    setResourceUrl(resourceName);
 
     const fetchMetadata = async () => {
-      const response = await fetch(`${thisResourceUrl}/metadata.json`);
+      let metadataUrl: string;
+
+      try {
+        metadataUrl = await getFirebaseUrl(`${resourceName}/metadata.json`);
+      } catch (error) {
+        setMessage({className: 'error', text: `Resource not found: ${resourceName}`})
+        return;
+      }
+
+      const response = await fetch(metadataUrl);
+      if (response.status !== 200) {
+        setMessage({className: 'error', text: `Resource not found: ${resourceName}`})
+        return;
+      }
       const data = await response.json();
       setMetadata(data);
     };
@@ -42,21 +61,38 @@ export default function FDPlayerUI(): JSX.Element {
     if (fourdPlayer !== null) return;
     if (!canvasRef || !metadata) return;
 
-    let meshUrls = []
-    for (let i = 0; i < metadata.endFrame + 1; i++) {
-      meshUrls.push(`${resourceUrl}/mesh/${pad(i, 4)}.glb`);
+    const initialFourdPlayer = async () => {
+      let meshUrls: string[] = []
+      let promises: Promise<any>[] = []
+      for (let i = 0; i < metadata.endFrame + 1; i++) {
+        promises.push(
+          getFirebaseUrl(`${resourceUrl}/mesh/${pad(i, 4)}.glb`).then(url => meshUrls[i] = url)
+        )
+      }
+
+      console.log('Wait for url resolving...')
+      await Promise.all(promises);
+
+      const textureUrl = await getFirebaseUrl(`${resourceUrl}/texture.mp4`);
+
+      const handlePlayerState = (playerState: FDPTextureState) => setPlayerState(playerState);
+
+      const player = new FourdPlayer(
+        canvasRef.current,
+        textureUrl,
+        meshUrls,
+        handlePlayerState
+      );
+      setFourdPlayer(player);
     }
-
-    const handlePlayerState = (playerState: FDPTextureState) => setPlayerState(playerState);
-
-    const player = new FourdPlayer(
-      canvasRef.current,
-      `${resourceUrl}/texture.mp4`,
-      meshUrls,
-      handlePlayerState
-    );
-    setFourdPlayer(player);
+    initialFourdPlayer();
   }, [canvasRef, metadata])
+  // Check isNotPlayedYet when autoplay is available
+  useEffect(() => {
+    if (isNotPlayedYet && playerState.isPlaying) {
+      setIsNotPlayedYet(false);
+    }
+  }, [isNotPlayedYet, playerState.isPlaying])
 
   const handleTimeBarClick = (seekRatio: number) => {
     fourdPlayer.seekTexture(seekRatio * playerState.duration);
@@ -73,8 +109,9 @@ export default function FDPlayerUI(): JSX.Element {
 
   return <div className='fourd-player-container'>
     <div className='overlay'>
-      {playerState.isLoading && <div className='loading-icon'></div>}
+      {!message && playerState.isLoading && <div className='loading-icon'></div>}
       {!playerState.isLoading && isNotPlayedYet && <p className='status-text'>讀取完成，點擊下方播放鍵播放</p>}
+      {message && <p className={'status-text ' + message.className}>{message.text}</p>}
     </div>
     <FDPlayerUIController
       playerState={playerState}

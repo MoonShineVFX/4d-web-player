@@ -35,7 +35,7 @@ export default class FourdTexture {
 
     // HTML Dom
     this.videoDom = document.createElement('video');
-    // this.videoDom.muted = true; // debug autoplay
+    this.videoDom.setAttribute('crossorigin', 'anonymous');
     this.videoDom.playsInline = true;
     this.videoDom.loop = true;
     this.videoDom.style.display = 'none';

@@ -218,3 +218,4 @@ dist
 oldjs/
 resource/
 /build/
+firebaseConfig.json
