@@ -1,9 +1,10 @@
 @theme-main: white;
 @theme-sub: rgba(@theme-main, 0.5);
-@theme-bg: #0b1214;
+@theme-bg: #152326;
 
 body {
   background-color: @theme-bg;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol";
 }
 
 .fourd-player-container {
@@ -20,10 +21,18 @@ body {
     pointer-events: none;
 
     .status-text {
+      @status-size: min(30px, 6vw);
       color: @theme-main;
-      font-size: min(30px, 6vw);
+      font-size: @status-size;
+      display: flex;
+      align-items: center;
+      svg {
+        height: @status-size;
+        fill: @theme-main;
+      }
       &.error {
-        color: red;
+        color: #ff4d4d;
+        opacity: 0.8;
       }
     }
 

@@ -19,7 +19,7 @@ export default function FDPlayerUIController(props: {
     props.onTimeBarClick(seekRatio);
   }
 
-  return <div className='controller'>
+  return <div className='controller' style={{opacity: playerState.duration === 0 ? '0' : '1'}}>
     <div className='time-control'>
       <TimeStampText time={playerState.currentTime} />
       <div ref={timeBarRef} className='time-bar' onClick={handleTimeBarClick}>

@@ -3,6 +3,7 @@ import FourdPlayer, {FDPTextureState, FDPConfigMetadata} from '..';
 import FDPlayerUIController from './components/FDPlayerUIController';
 import './FDPlayerUI.less';
 import getFirebaseUrl from './components/firebaseManager';
+import IconPlay from './icons/play_arrow.svg'
 
 import {pad} from '../utility';
 
@@ -34,6 +35,12 @@ export default function FDPlayerUI(): JSX.Element {
   useEffect(() => {
     const paths = window.location.pathname.split('/');
     const resourceName = paths[paths.length - 1];
+
+    if (resourceName === '') {
+      setMessage({className: 'error', text: '請在網址輸入 4DREC 影片名稱'})
+      return;
+    }
+
     setResourceUrl(resourceName);
 
     const fetchMetadata = async () => {
@@ -43,13 +50,13 @@ export default function FDPlayerUI(): JSX.Element {
         metadataUrl = await getFirebaseUrl(`${resourceName}/metadata.json`);
       } catch (error) {
         console.error(error);
-        setMessage({className: 'error', text: `Resource not found: ${resourceName}`})
+        setMessage({className: 'error', text: `未找到 4DREC 影片: ${resourceName}`})
         return;
       }
 
       const response = await fetch(metadataUrl);
       if (response.status !== 200) {
-        setMessage({className: 'error', text: `Resource not found: ${resourceName}`})
+        setMessage({className: 'error', text: `未找到 4DREC 影片: ${resourceName}`})
         return;
       }
       const data = await response.json();
@@ -112,7 +119,7 @@ export default function FDPlayerUI(): JSX.Element {
   return <div className='fourd-player-container'>
     <div className='overlay'>
       {!message && playerState.isLoading && <div className='loading-icon'></div>}
-      {!playerState.isLoading && isNotPlayedYet && <p className='status-text'>讀取完成，點擊下方播放鍵播放</p>}
+      {!playerState.isLoading && isNotPlayedYet && <p className='status-text'>讀取完成，點擊下方播放鍵 <IconPlay/> 播放</p>}
       {message && <p className={'status-text ' + message.className}>{message.text}</p>}
     </div>
     <FDPlayerUIController
