@@ -55,6 +55,15 @@ export default class FourdEngine {
 
     this.currentMesh = null;
 
+    // Resize callback
+    window.addEventListener('resize', () => {
+      const resizeWidth = canvasDom.parentElement.clientWidth;
+      const resizeHeight = canvasDom.parentElement.clientHeight;
+      this.camera.aspect = resizeWidth / resizeHeight;
+      this.camera.updateProjectionMatrix();
+      this.renderer.setSize(resizeWidth, resizeHeight);
+    });
+
     this.initialize();
   }
 
