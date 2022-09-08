@@ -36,25 +36,31 @@ body {
       }
     }
 
-    .loading-icon {
-      @loading-size: max(20vw, 150px);
-      @loading-stroke: min(3vw, 15px);
-      width: @loading-size;
-      height: @loading-size;
-      border: @loading-stroke solid @theme-sub;
-      border-top: @loading-stroke solid @theme-main;
-      border-radius: 50%;
-    }
-    .loading-icon {
-      transition-property: transform;
-      animation-name: loading-rotate;
-      animation-duration: 1.2s;
-      animation-iteration-count: infinite;
-      animation-timing-function: linear;
-    }
-    @keyframes loading-rotate {
-      from {transform: rotate(0deg);}
-      to {transform: rotate(360deg);}
+    .loading {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+
+      .loading-icon {
+        @loading-size: max(20vw, 150px);
+        @loading-stroke: min(3vw, 15px);
+        width: @loading-size;
+        height: @loading-size;
+        border: @loading-stroke solid @theme-sub;
+        border-top: @loading-stroke solid @theme-main;
+        border-radius: 50%;
+      }
+      .loading-icon {
+        transition-property: transform;
+        animation-name: loading-rotate;
+        animation-duration: 1.2s;
+        animation-iteration-count: infinite;
+        animation-timing-function: linear;
+      }
+      @keyframes loading-rotate {
+        from {transform: rotate(0deg);}
+        to {transform: rotate(360deg);}
+      }
     }
   }
 

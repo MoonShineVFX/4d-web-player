@@ -31,6 +31,8 @@ export default function FDPlayerUI(): JSX.Element {
   const [isNotPlayedYet, setIsNotPlayedYet] = useState<boolean>(true);
   const [message, setMessage] = useState<Message>(null);
 
+  playerState.isLoading = true; // debug
+
   // Get metadata
   useEffect(() => {
     const paths = window.location.pathname.split('/');
@@ -118,7 +120,10 @@ export default function FDPlayerUI(): JSX.Element {
 
   return <div className='fourd-player-container'>
     <div className='overlay'>
-      {!message && playerState.isLoading && <div className='loading-icon'></div>}
+      {!message && playerState.isLoading && <div className='loading'>
+        <div className='loading-icon'></div>
+        <p className='status-text'>{resourceUrl} 讀取中</p>
+      </div>}
       {!playerState.isLoading && isNotPlayedYet && <p className='status-text'>讀取完成，點擊下方播放鍵 <IconPlay/> 播放</p>}
       {message && <p className={'status-text ' + message.className}>{message.text}</p>}
     </div>
