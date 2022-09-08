@@ -31,8 +31,6 @@ export default function FDPlayerUI(): JSX.Element {
   const [isNotPlayedYet, setIsNotPlayedYet] = useState<boolean>(true);
   const [message, setMessage] = useState<Message>(null);
 
-  playerState.isLoading = true; // debug
-
   // Get metadata
   useEffect(() => {
     const paths = window.location.pathname.split('/');
