@@ -44,7 +44,7 @@ class Config {
     this.player = {
       fps: 30,
       meshFrameOffset: -1
-    }
+    };
   }
 
   static get instance(): Config {
@@ -52,7 +52,22 @@ class Config {
   }
 
   applyMetadata(metadata: ConfigMetadata) {
-    if (metadata.meshFrameOffset) this.player.meshFrameOffset = metadata.meshFrameOffset;
+    const metadataKeys = Object.keys(metadata);
+    const configKeys = ['engine', 'texture', 'mesh', 'player'];
+    type ConfigKey = keyof Config;
+
+    metadataKeys.forEach(metadataKey => {
+      configKeys.forEach(configKey => {
+        const subConfig = this[configKey as ConfigKey];
+        const parameters = Object.keys(subConfig);
+        if (parameters.includes(metadataKey)) {
+          // @ts-ignore
+          subConfig[metadataKey] = metadata[metadataKey];
+          // @ts-ignore
+          console.log('Apply metadata:', configKey, '/', metadataKey, '->', metadata[metadataKey]);
+        }
+      });
+    });
   }
 }
 

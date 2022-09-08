@@ -42,6 +42,7 @@ export default function FDPlayerUI(): JSX.Element {
       try {
         metadataUrl = await getFirebaseUrl(`${resourceName}/metadata.json`);
       } catch (error) {
+        console.error(error);
         setMessage({className: 'error', text: `Resource not found: ${resourceName}`})
         return;
       }
@@ -81,7 +82,8 @@ export default function FDPlayerUI(): JSX.Element {
         canvasRef.current,
         textureUrl,
         meshUrls,
-        handlePlayerState
+        handlePlayerState,
+        metadata
       );
       setFourdPlayer(player);
     }

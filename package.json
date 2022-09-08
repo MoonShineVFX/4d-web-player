@@ -35,7 +35,6 @@
   },
   "scripts": {
     "serve": "webpack serve",
-    "serve-prod": "set BABEL_ENV=production&& set NODE_ENV=production&& webpack serve",
-    "build": "set BABEL_ENV=production&& set NODE_ENV=production&& webpack"
+    "build": "set BABEL_ENV=production&& set NODE_ENV=production&& webpack&& firebase deploy --only hosting"
   }
 }
