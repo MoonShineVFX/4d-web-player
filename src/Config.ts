@@ -11,6 +11,7 @@ class Config {
     cameraFOV: number;
     cameraDistance: number;
     cameraHeightOffset: number;
+    modelPositionOffset: number[];
     backgroundColor: number;
   };
   texture: {
@@ -30,7 +31,8 @@ class Config {
     this.engine = {
       cameraFOV: 60,
       cameraDistance: 0.8,
-      cameraHeightOffset: -0.15,
+      cameraHeightOffset: 0.0,
+      modelPositionOffset: [0.0, 0.0, 0.0],
       backgroundColor: 0x152126
     };
     this.texture = {

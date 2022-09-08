@@ -25,6 +25,7 @@ export default class FourdEngine {
   private renderer: THREE.WebGL1Renderer;
 
   private orbitControls: OrbitControls;
+  private modelPositionOffset: THREE.Vector3;
 
   private readonly gl: WebGLRenderingContext;
   private rawTexture: RawTexture | null;
@@ -34,6 +35,8 @@ export default class FourdEngine {
   uniMaterial: THREE.MeshBasicMaterial | null;
 
   constructor(canvasDom: HTMLCanvasElement) {
+    this.modelPositionOffset = new THREE.Vector3(...CONFIG.engine.modelPositionOffset);
+
     this.scene = new THREE.Scene();
     this.camera = new THREE.PerspectiveCamera(
       CONFIG.engine.cameraFOV,
@@ -89,6 +92,7 @@ export default class FourdEngine {
   }
 
   private updateMesh(mesh: THREE.Group) {
+    mesh.position.add(this.modelPositionOffset);
     this.scene.add(mesh);
 
     // Purge unused scene group
