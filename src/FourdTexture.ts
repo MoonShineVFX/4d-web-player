@@ -49,8 +49,8 @@ export default class FourdTexture {
 
     // Event
     const listenEvents = [
-      'pause', 'playing', 'waiting', 'canplay', 'seeking', 'seeked',
-      'durationchange', 'timeupdate', 'volumechange'
+      'pause', 'playing', 'waiting', 'loadedmetadata', 'seeking', 'seeked',
+      'durationchange', 'timeupdate', 'volumechange', 'error'
     ];
     listenEvents.forEach(eventName => {
       this.videoDom.addEventListener(eventName, event => this.handleVideoEvent(event));
@@ -63,7 +63,10 @@ export default class FourdTexture {
 
   private handleVideoEvent(event: Event) {
     switch(event.type) {
-      case 'canplay':
+      case 'error':
+        console.error('Video loading error');
+        break;
+      case 'loadedmetadata':
         this.setState({
           ...this.state,
           isPlaying: !this.videoDom.paused,

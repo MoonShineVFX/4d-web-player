@@ -68,8 +68,10 @@ export default class FourdPlayer {
 
   private onTextureFrameDecoded(frameNumber: number, videoDom: HTMLVideoElement): boolean {
     console.debug('Play frame: ', frameNumber);
+
+    if (!CONFIG.isSafari) frameNumber += CONFIG.player.meshFrameOffset;
     
-    const playFrameResult = this.mesh.playFrame(frameNumber + CONFIG.player.meshFrameOffset);
+    const playFrameResult = this.mesh.playFrame(frameNumber);
     if (playFrameResult.state === PlayFrameState.Loading) return false;
     if (playFrameResult.state === PlayFrameState.Success) {
       this.engine.updateFrame(videoDom, playFrameResult.payload!);

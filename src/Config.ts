@@ -27,6 +27,8 @@ class Config {
     meshFrameOffset: number;
   }
 
+  isSafari: boolean;
+
   private constructor() {
     this.engine = {
       cameraFOV: 60,
@@ -47,6 +49,8 @@ class Config {
       fps: 30,
       meshFrameOffset: -1
     };
+
+    this.isSafari = /^((?!chrome|android).)*safari/i.test(navigator.userAgent);
   }
 
   static get instance(): Config {
