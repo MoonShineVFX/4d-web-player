@@ -1,4 +1,4 @@
-import React, {useRef} from 'react';
+import React, {useEffect, useRef} from 'react';
 import {FDPTextureState} from '../..';
 import IconPause from '../icons/pause.svg';
 import IconPlay from '../icons/play_arrow.svg'
@@ -10,7 +10,23 @@ export default function FDPlayerUIController(props: {
   onPlayButtonClick: () => void
 }): JSX.Element {
   const {playerState} = props;
+
+  // hooks
   const timeBarRef = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    const keyPressedHandler = (event: KeyboardEvent) => {
+      switch (event.key) {
+        case ' ':
+          props.onPlayButtonClick();
+          return;
+        default:
+          return;
+      }
+    }
+
+    window.addEventListener('keydown', keyPressedHandler);
+    return () => window.removeEventListener('keydown', keyPressedHandler);
+  }, [props.onPlayButtonClick])
 
   const timeBarProgressWidth = (playerState.currentTime / playerState.duration) * 100 + '%';
 
