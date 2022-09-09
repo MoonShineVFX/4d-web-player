@@ -28,6 +28,7 @@ class Config {
   }
 
   isSafari: boolean;
+  isWebview: boolean;
 
   private constructor() {
     this.engine = {
@@ -51,6 +52,25 @@ class Config {
     };
 
     this.isSafari = /^((?!chrome|android).)*safari/i.test(navigator.userAgent);
+
+    // User agent detection
+    const standalone = Object.hasOwn(window.navigator, 'standalone');
+    const userAgent = window.navigator.userAgent.toLowerCase();
+    const ios = /iphone|ipod|ipad/.test(userAgent);
+    const inApp = /line/.test(userAgent);
+
+    this.isWebview = false;
+    if (ios) {
+      if (inApp || (!standalone && !this.isSafari)) {
+        this.isWebview = true;
+      }
+    } else {
+      if (userAgent.includes('wv')) {
+        this.isWebview = true;
+      } else {
+        // Chrome
+      }
+    }
   }
 
   static get instance(): Config {

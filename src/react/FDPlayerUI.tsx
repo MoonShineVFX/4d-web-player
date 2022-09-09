@@ -4,6 +4,7 @@ import FDPlayerUIController from './components/FDPlayerUIController';
 import './FDPlayerUI.less';
 import getFirebaseUrl from './components/firebaseManager';
 import IconPlay from './icons/play_arrow.svg'
+import CONFIG from "../Config";
 
 import {pad} from '../utility';
 
@@ -117,6 +118,7 @@ export default function FDPlayerUI(): JSX.Element {
   }
 
   return <div className='fourd-player-container'>
+    {CONFIG.isWebview && <p className='notification'>偵測到目前使用內嵌瀏覽器，請用外部瀏覽器開啟連結以確保正確使用體驗。</p>}
     <div className='overlay'>
       {!message && playerState.isLoading && <div className='loading'>
         <div className='loading-icon'></div>

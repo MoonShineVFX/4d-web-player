@@ -33,28 +33,29 @@ export default class FourdTexture {
       muted: false
     };
 
-    // HTML Dom
+    // Video Dom
     this.videoDom = document.createElement('video');
     this.videoDom.setAttribute('crossorigin', 'anonymous');
     this.videoDom.playsInline = true;
     this.videoDom.loop = true;
     this.videoDom.style.display = 'none';
 
+    // Video events
+    const listenEvents = [
+      'pause', 'playing', 'waiting', 'loadedmetadata', 'seeking', 'seeked',
+      'durationchange', 'timeupdate', 'volumechange', 'error', 'canplay', 'suspend', 'stalled'
+    ];
+    listenEvents.forEach(eventName => {
+      this.videoDom.addEventListener(eventName, event => this.handleVideoEvent(event));
+    });
+
+    // Video source
     const srcDom = document.createElement('source');
     srcDom.setAttribute('src', resourceURL);
     srcDom.setAttribute('type', 'video/mp4')
     this.videoDom.prepend(srcDom);
 
     document.body.append(this.videoDom);
-
-    // Event
-    const listenEvents = [
-      'pause', 'playing', 'waiting', 'loadedmetadata', 'seeking', 'seeked',
-      'durationchange', 'timeupdate', 'volumechange', 'error'
-    ];
-    listenEvents.forEach(eventName => {
-      this.videoDom.addEventListener(eventName, event => this.handleVideoEvent(event));
-    });
 
     // Callback
     this.onStateChanged = onStateChanged;
@@ -64,9 +65,13 @@ export default class FourdTexture {
   private handleVideoEvent(event: Event) {
     switch(event.type) {
       case 'error':
-        console.error('Video loading error');
+      case 'stalled':
+      case 'suspend':
+        console.error('Video loading error', event.type);
         break;
       case 'loadedmetadata':
+      case 'canplay':
+        console.log('metadata loaded');
         this.setState({
           ...this.state,
           isPlaying: !this.videoDom.paused,
