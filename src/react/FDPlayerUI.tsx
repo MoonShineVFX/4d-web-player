@@ -120,7 +120,7 @@ export default function FDPlayerUI(): JSX.Element {
     <div className='overlay'>
       {!message && playerState.isLoading && <div className='loading'>
         <div className='loading-icon'></div>
-        <p className='status-text'>{resourceUrl} 讀取中</p>
+        {isNotPlayedYet && <p className='status-text'>{resourceUrl} 讀取中</p>}
       </div>}
       {!playerState.isLoading && isNotPlayedYet && <p className='status-text'>讀取完成，點擊下方播放鍵 <IconPlay/> 播放</p>}
       {message && <p className={'status-text ' + message.className}>{message.text}</p>}
