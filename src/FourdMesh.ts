@@ -44,6 +44,7 @@ export default class FourdMesh {
 
   private readonly frames: MeshFrame[];
   private urls: string[];
+  private hiresUrls?: string[];
 
   private loader: GLTFLoader;
   private readonly dracoLoader: DRACOLoader;
@@ -54,13 +55,15 @@ export default class FourdMesh {
   constructor(
     material: THREE.Material = null,
     urls: string[],
-    onLoadingStateChanged: (loadingState: boolean) => void
+    onLoadingStateChanged: (loadingState: boolean) => void,
+    hiresUrls?: string[]
   ) {
     this.playedFrameNumber = 0;
     this.material = material;
 
     this.frames = [];
     this.urls = urls;
+    this.hiresUrls = hiresUrls;
 
     this.isLoading = true;
     this.onLoadingStateChanged = onLoadingStateChanged;
@@ -85,14 +88,10 @@ export default class FourdMesh {
     if (meshFrame.state !== MeshFrameState.Empty) return;
 
     meshFrame.state = MeshFrameState.Loading;
-    fetch(this.urls[frameNumber]).then(
-      response => response.arrayBuffer()
-    ).then(arrayBuffer => {
-      this.loader.parse(
-        arrayBuffer, '',
-        (gltf: GltfData) => this.onGltfLoaded(frameNumber, gltf)
-      );
-    });
+    this.loader.load(
+      this.urls[frameNumber],
+      (gltf: GltfData) => this.onGltfLoaded(frameNumber, gltf)
+    );
   }
 
   private preloadFrames() {
