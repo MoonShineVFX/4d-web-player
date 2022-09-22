@@ -6,7 +6,8 @@ const isFirebaseHosting = window.location.hostname.includes('4drec.com');
 let getFirebaseStorage: Promise<FirebaseStorage>;
 if (isFirebaseHosting) {
   getFirebaseStorage = (async (): Promise<FirebaseStorage> => {
-    const firebaseConfig = await import('./firebaseConfig.json');
+    const response = await fetch('/__/firebase/init.json');
+    const firebaseConfig = await response.json();
     const app = initializeApp(firebaseConfig);
     return getStorage(app, 'gs://' + firebaseConfig.storageBucket);
   })();
