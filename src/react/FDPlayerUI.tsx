@@ -2,7 +2,7 @@ import React, {useEffect, useRef, useState} from 'react';
 import FourdPlayer, {FDPTextureState, FDPConfigMetadata, FDPMeshFrameState} from '..';
 import FDPlayerUIController from './components/FDPlayerUIController';
 import './FDPlayerUI.less';
-import getFirebaseUrl from './components/firebaseManager';
+import gerResourceUrl from './components/resourceManager';
 import IconPlay from './icons/play_arrow.svg'
 import CONFIG from "../Config";
 
@@ -49,7 +49,7 @@ export default function FDPlayerUI(): JSX.Element {
       let metadataUrl: string;
 
       try {
-        metadataUrl = await getFirebaseUrl(`${resourceName}/metadata.json`);
+        metadataUrl = await gerResourceUrl(`${resourceName}/metadata.json`);
       } catch (error) {
         console.error(error);
         setMessage({className: 'error', text: `未找到 4DREC 影片: ${resourceName}`})
@@ -77,11 +77,11 @@ export default function FDPlayerUI(): JSX.Element {
       let promises: Promise<any>[] = [];
       for (let i = 0; i < metadata.endFrame + 1; i++) {
         promises.push(
-          getFirebaseUrl(`${resourceUrl}/mesh/${pad(i, 4)}.glb`).then(url => meshUrls[i] = url)
+          gerResourceUrl(`${resourceUrl}/mesh/${pad(i, 4)}.glb`).then(url => meshUrls[i] = url)
         )
         if (metadata.hires) {
           promises.push(
-            getFirebaseUrl(`${resourceUrl}/hires/${pad(i, 4)}.glb`).then(url => hiresUrls[i] = url)
+            gerResourceUrl(`${resourceUrl}/hires/${pad(i, 4)}.glb`).then(url => hiresUrls[i] = url)
           )
         }
       }
@@ -89,7 +89,7 @@ export default function FDPlayerUI(): JSX.Element {
       console.log('Wait for url resolving...')
       await Promise.all(promises);
 
-      const textureUrl = await getFirebaseUrl(`${resourceUrl}/texture.mp4`);
+      const textureUrl = await gerResourceUrl(`${resourceUrl}/texture.mp4`);
 
       const handlePlayerState = (playerState: FDPTextureState) => setPlayerState(playerState);
       const handleHiresState = (hiresMeshState: FDPMeshFrameState) => setHiresMeshState(hiresMeshState);
