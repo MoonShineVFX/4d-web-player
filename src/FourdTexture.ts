@@ -1,7 +1,7 @@
 import CONFIG from './Config';
 
 
-type FrameDecodedCallback = (frameNumber: number, videoDom: HTMLVideoElement) => boolean;
+type FrameDecodedCallback = (frameNumber: number, videoDom: HTMLVideoElement, isPaused: boolean) => boolean;
 
 export interface TextureState {
   isLoading: boolean;
@@ -18,6 +18,7 @@ export default class FourdTexture {
   private onFrameDecoded: FrameDecodedCallback;
   private onStateChanged: (textureState: TextureState) => void;
   private playedFrameNumber: number | undefined;
+  private pauseTrigger: boolean;
 
   state: TextureState;
 
@@ -32,6 +33,8 @@ export default class FourdTexture {
       volume: 1.0,
       muted: false
     };
+
+    this.pauseTrigger = false;
 
     // Video Dom
     this.videoDom = document.createElement('video');
@@ -67,11 +70,10 @@ export default class FourdTexture {
       case 'error':
       case 'stalled':
       case 'suspend':
-        console.error('Video loading error', event.type);
+        console.warn('Video error:', event.type);
         break;
       case 'loadedmetadata':
       case 'canplay':
-        console.log('metadata loaded');
         this.setState({
           ...this.state,
           isPlaying: !this.videoDom.paused,
@@ -148,8 +150,9 @@ export default class FourdTexture {
     }
     this.playedFrameNumber = currentFrame;
 
-    const success = this.onFrameDecoded(currentFrame, this.videoDom);
-    if (!success) {
+    const success = this.onFrameDecoded(currentFrame, this.videoDom, this.pauseTrigger);
+    if (!success || this.pauseTrigger) {
+      if (this.pauseTrigger) this.pauseTrigger = false;
       this.videoDom.pause();
       return;
     }
@@ -168,8 +171,8 @@ export default class FourdTexture {
   }
 
   pause() {
-    if (this.videoDom.paused) return;
-    this.videoDom.pause();
+    if (this.videoDom.paused || this.pauseTrigger) return;
+    this.pauseTrigger = true;
   }
 
   seek(seekTime: number) {

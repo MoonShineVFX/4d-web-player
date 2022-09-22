@@ -1,8 +1,7 @@
 import FourdTexture, {TextureState} from './FourdTexture';
 import FourdEngine from './FourdEngine';
-import FourdMesh, {PlayFrameState} from './FourdMesh';
-import CONFIG from './Config';
-import {ConfigMetadata} from './Config';
+import FourdMesh, {MeshFrameState, PlayFrameState} from './FourdMesh';
+import CONFIG, {ConfigMetadata} from './Config';
 
 
 export default class FourdPlayer {
@@ -15,14 +14,21 @@ export default class FourdPlayer {
 
   private isLoading: boolean;
 
+  private hasHires: boolean;
+  private lastPlayedFrame?: number;
+  private hiresMeshState: MeshFrameState;
+
   private onStateChanged: (textureState: TextureState) => void;
+  private onHiresStateChanged?: (hiresMeshState: MeshFrameState) => void;
 
   constructor(
     canvasDom: HTMLCanvasElement,
     textureUrl: string,
     meshUrls: string[],
     onStateChanged: (textureState: TextureState) => void,
-    metadata?: ConfigMetadata
+    metadata?: ConfigMetadata,
+    hiresUrls?: string[],
+    onHiresStateChanged?: (hiresMeshState: MeshFrameState) => void
   ) {
     // Apply config first
     if (metadata) CONFIG.applyMetadata(metadata);
@@ -32,19 +38,23 @@ export default class FourdPlayer {
     this.renderDuration = 1000 / CONFIG.player.fps;
 
     this.isLoading = true;
+    this.hasHires = hiresUrls !== undefined;
+    this.hiresMeshState = MeshFrameState.Empty;
 
     this.onStateChanged = onStateChanged;
+    this.onHiresStateChanged = onHiresStateChanged;
 
     this.engine = new FourdEngine(canvasDom);
     this.mesh = new FourdMesh(
       this.engine.uniMaterial,
       meshUrls,
-      () => this.onMeshLoadingStateChanged()
+      () => this.onMeshLoadingStateChanged(),
+      hiresUrls
     );
     this.texture = new FourdTexture(
       textureUrl,
-      (frameNumber: number, videoDom: HTMLVideoElement) => {
-        return this.onTextureFrameDecoded(frameNumber, videoDom)
+      (frameNumber: number, videoDom: HTMLVideoElement, isPause: boolean) => {
+        return this.onTextureFrameDecoded(frameNumber, videoDom, isPause)
       },
       () => this.onTextureStateChanged()
     );
@@ -66,15 +76,31 @@ export default class FourdPlayer {
     }
   }
 
-  private onTextureFrameDecoded(frameNumber: number, videoDom: HTMLVideoElement): boolean {
-    console.debug('Play frame: ', frameNumber);
+  private onTextureFrameDecoded(frameNumber: number, videoDom: HTMLVideoElement, isPause: boolean): boolean {
+    console.debug('Play texture frame: ', frameNumber);
+    if (this.hiresMeshState !== MeshFrameState.Empty) this.setHiresMeshState(MeshFrameState.Empty);
 
-    if (!CONFIG.isSafari) frameNumber += CONFIG.player.meshFrameOffset;
-    
-    const playFrameResult = this.mesh.playFrame(frameNumber);
+    let offsetFrameNumber = frameNumber;
+    if (!CONFIG.isSafari) offsetFrameNumber += CONFIG.player.meshFrameOffset;
+    if (offsetFrameNumber < 0) return true;
+    this.lastPlayedFrame = offsetFrameNumber;
+    console.debug('Play mesh frame: ', offsetFrameNumber);
+
+    const playFrameResult = this.mesh.playFrame(offsetFrameNumber);
     if (playFrameResult.state === PlayFrameState.Loading) return false;
     if (playFrameResult.state === PlayFrameState.Success) {
       this.engine.updateFrame(videoDom, playFrameResult.payload!);
+    }
+
+    if (isPause && this.hasHires) {
+      this.setHiresMeshState(MeshFrameState.Loading);
+      this.mesh.playHiresFrame(offsetFrameNumber).then(
+        mesh => {
+          if (offsetFrameNumber !== this.lastPlayedFrame) return;
+          this.engine.updateMesh(mesh, true);
+          this.setHiresMeshState(MeshFrameState.Loaded);
+        }
+      );
     }
 
     return true
@@ -105,6 +131,12 @@ export default class FourdPlayer {
       ...this.texture.state,
       isLoading: this.isLoading
     });
+  }
+
+  private setHiresMeshState(meshFrameState: MeshFrameState) {
+    if (this.hiresMeshState === meshFrameState) return;
+    this.hiresMeshState = meshFrameState;
+    if (this.onHiresStateChanged) this.onHiresStateChanged(this.hiresMeshState);
   }
 
   playTexture() {

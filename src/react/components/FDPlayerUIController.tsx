@@ -1,11 +1,13 @@
 import React, {useEffect, useRef} from 'react';
-import {FDPTextureState} from '../..';
+import {FDPTextureState, FDPMeshFrameState} from '../..';
 import IconPause from '../icons/pause.svg';
-import IconPlay from '../icons/play_arrow.svg'
+import IconPlay from '../icons/play_arrow.svg';
+import IconDone from '../icons/done.svg';
 
 
 export default function FDPlayerUIController(props: {
   playerState: FDPTextureState,
+  hiresMeshState: FDPMeshFrameState,
   onTimeBarClick: (seekRatio: number) => void,
   onPlayButtonClick: () => void
 }): JSX.Element {
@@ -49,6 +51,9 @@ export default function FDPlayerUIController(props: {
         onClick={props.onPlayButtonClick}
         disabled={playerState.isLoading}
       />
+      <div className='info-right'>
+        <HiresInfo hiresMeshState={props.hiresMeshState}/>
+      </div>
     </div>
   </div>
 }
@@ -65,6 +70,16 @@ function ControllerButton(props: {
   if (props.className) className += ' ' + props.className;
   if (props.disabled) className += ' disabled';
   return <Icon className={className} onClick={props.onClick}/>
+}
+
+function HiresInfo(props: {hiresMeshState: FDPMeshFrameState}): JSX.Element {
+  const {hiresMeshState} = props;
+  const isShow = hiresMeshState === FDPMeshFrameState.Empty ? {display: 'none'} : {};
+  return <div className='info-hires' style={isShow}>
+    {hiresMeshState === FDPMeshFrameState.Loading && <div className='loading-icon'></div>}
+    {hiresMeshState === FDPMeshFrameState.Loaded && <IconDone/>}
+    <span>高解析模型</span>
+  </div>
 }
 
 

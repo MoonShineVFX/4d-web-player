@@ -40,7 +40,8 @@ export default class FourdEngine {
     this.scene = new THREE.Scene();
     this.camera = new THREE.PerspectiveCamera(
       CONFIG.engine.cameraFOV,
-      canvasDom.offsetWidth / canvasDom.offsetHeight
+      canvasDom.offsetWidth / canvasDom.offsetHeight,
+      0.01
     );
     this.renderer = new THREE.WebGL1Renderer({
       antialias: true,
@@ -100,7 +101,20 @@ export default class FourdEngine {
     }
   }
 
-  private updateMesh(mesh: THREE.Group) {
+  updateMesh(mesh: THREE.Group, isHires: boolean = false) {
+    // Check hires texture
+    if (isHires) {
+      const meshCore = mesh.children[0] as THREE.Mesh;
+      const meshMaterial = meshCore.material as THREE.MeshStandardMaterial;
+      meshMaterial.map.encoding = THREE.LinearEncoding;
+      this.uniMaterial.map = meshMaterial.map;
+      meshCore.material = this.uniMaterial;
+      meshMaterial.dispose();
+    } else {
+      if (this.uniMaterial.map !== this.rawTexture) this.uniMaterial.map = this.rawTexture;
+    }
+
+    // Add mesh and offset position
     mesh.position.add(this.modelPositionOffset);
     this.scene.add(mesh);
 

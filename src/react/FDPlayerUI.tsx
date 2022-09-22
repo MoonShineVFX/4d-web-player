@@ -1,5 +1,5 @@
 import React, {useEffect, useRef, useState} from 'react';
-import FourdPlayer, {FDPTextureState, FDPConfigMetadata} from '..';
+import FourdPlayer, {FDPTextureState, FDPConfigMetadata, FDPMeshFrameState} from '..';
 import FDPlayerUIController from './components/FDPlayerUIController';
 import './FDPlayerUI.less';
 import getFirebaseUrl from './components/firebaseManager';
@@ -31,6 +31,7 @@ export default function FDPlayerUI(): JSX.Element {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const [isNotPlayedYet, setIsNotPlayedYet] = useState<boolean>(true);
   const [message, setMessage] = useState<Message>(null);
+  const [hiresMeshState, setHiresMeshState] = useState<FDPMeshFrameState>(FDPMeshFrameState.Empty);
 
   // Get metadata
   useEffect(() => {
@@ -71,12 +72,18 @@ export default function FDPlayerUI(): JSX.Element {
     if (!canvasRef || !metadata) return;
 
     const initialFourdPlayer = async () => {
-      let meshUrls: string[] = []
-      let promises: Promise<any>[] = []
+      let meshUrls: string[] = [];
+      let hiresUrls: string[] = [];
+      let promises: Promise<any>[] = [];
       for (let i = 0; i < metadata.endFrame + 1; i++) {
         promises.push(
           getFirebaseUrl(`${resourceUrl}/mesh/${pad(i, 4)}.glb`).then(url => meshUrls[i] = url)
         )
+        if (metadata.hires) {
+          promises.push(
+            getFirebaseUrl(`${resourceUrl}/hires/${pad(i, 4)}.glb`).then(url => hiresUrls[i] = url)
+          )
+        }
       }
 
       console.log('Wait for url resolving...')
@@ -85,13 +92,16 @@ export default function FDPlayerUI(): JSX.Element {
       const textureUrl = await getFirebaseUrl(`${resourceUrl}/texture.mp4`);
 
       const handlePlayerState = (playerState: FDPTextureState) => setPlayerState(playerState);
+      const handleHiresState = (hiresMeshState: FDPMeshFrameState) => setHiresMeshState(hiresMeshState);
 
       const player = new FourdPlayer(
         canvasRef.current,
         textureUrl,
         meshUrls,
         handlePlayerState,
-        metadata
+        metadata,
+        metadata.hires ? hiresUrls : undefined,
+        handleHiresState
       );
       setFourdPlayer(player);
     }
@@ -120,7 +130,7 @@ export default function FDPlayerUI(): JSX.Element {
   return <div className='fourd-player-container'>
     {CONFIG.isWebview && <p className='notification'>偵測到目前使用內嵌瀏覽器，請用外部瀏覽器開啟連結以確保正確使用體驗。</p>}
     <div className='overlay'>
-      {!message && playerState.isLoading && <div className='loading'>
+      {!message && playerState.isLoading && <div className='overlay-loading'>
         <div className='loading-icon'></div>
         {isNotPlayedYet && <p className='status-text'>{resourceUrl} 讀取中</p>}
       </div>}
@@ -131,6 +141,7 @@ export default function FDPlayerUI(): JSX.Element {
       playerState={playerState}
       onTimeBarClick={handleTimeBarClick}
       onPlayButtonClick={handlePlayButtonClick}
+      hiresMeshState={hiresMeshState}
     />}
     <canvas ref={canvasRef}></canvas>
   </div>

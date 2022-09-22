@@ -14,7 +14,7 @@ interface GltfData {
   asset: object;
 }
 
-enum MeshFrameState {
+export enum MeshFrameState {
   Empty,
   Loading,
   Loaded
@@ -137,6 +137,25 @@ export default class FourdMesh {
     }
     if (this.isLoading) this.setLoadingState(false);
     return true;
+  }
+
+  async playHiresFrame(playFrameNumber: number): Promise<THREE.Group> {
+    console.log('Load hires mesh: ', playFrameNumber);
+    return new Promise<THREE.Group>((resolve, reject) => {
+      if (!this.hiresUrls) reject('No hires resource found.');
+      this.loader.load(
+        this.hiresUrls[playFrameNumber],
+        gltf => {
+          const mesh = gltf.scene.children[0] as THREE.Mesh;
+
+          mesh.geometry.computeVertexNormals();
+
+          resolve(gltf.scene);
+        },
+        undefined,
+        error => reject(error)
+      );
+    });
   }
 
   playFrame(playFrameNumber: number): PlayFrameResult {

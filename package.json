@@ -15,6 +15,7 @@
     "@types/dom-webcodecs": "^0.1.4",
     "@types/three": "^0.139.0",
     "babel-loader": "^8.2.5",
+    "babel-plugin-transform-remove-console": "^6.9.4",
     "css-loader": "^6.7.1",
     "html-webpack-plugin": "^5.5.0",
     "less": "^4.1.3",

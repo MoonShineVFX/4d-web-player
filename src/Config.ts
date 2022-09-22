@@ -1,6 +1,8 @@
 export interface ConfigMetadata {
-  endFrame: number,
-  meshFrameOffset: number;
+  endFrame: number;
+  hires?: boolean;
+  meshFrameOffset?: number;
+  modelPositionOffset?: number[];
 }
 
 
