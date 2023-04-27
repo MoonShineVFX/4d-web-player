@@ -6,9 +6,16 @@
       "**/.*",
       "**/node_modules/**"
     ],
-    "rewrites": [ {
-      "source": "**",
-      "destination": "/index.html"
-    } ]
+    "appAssociation": "AUTO",
+    "rewrites": [
+      {
+        "source": "/links/**",
+        "dynamicLinks": true
+      },
+      {
+        "source": "!/links/**",
+        "destination": "/index.html"
+      }
+    ]
   }
 }
