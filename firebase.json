@@ -9,11 +9,7 @@
     "appAssociation": "AUTO",
     "rewrites": [
       {
-        "source": "/links/**",
-        "dynamicLinks": true
-      },
-      {
-        "source": "!/links/**",
+        "source": "**",
         "destination": "/index.html"
       }
     ]

@@ -49,7 +49,7 @@ export default function FDPlayerUI(): JSX.Element {
       let metadataUrl: string;
 
       try {
-        metadataUrl = await gerResourceUrl(`${resourceName}/metadata.json`);
+        metadataUrl = gerResourceUrl(`${resourceName}/metadata.json`);
       } catch (error) {
         console.error(error);
         setMessage({className: 'error', text: `未找到 4DREC 影片: ${resourceName}`})
@@ -76,20 +76,16 @@ export default function FDPlayerUI(): JSX.Element {
       let hiresUrls: string[] = [];
       let promises: Promise<any>[] = [];
       for (let i = 0; i < metadata.endFrame + 1; i++) {
-        promises.push(
-          gerResourceUrl(`${resourceUrl}/mesh/${pad(i, 4)}.glb`).then(url => meshUrls[i] = url)
-        )
+        meshUrls[i] = gerResourceUrl(`${resourceUrl}/mesh/${pad(i, 4)}.glb`)
         if (metadata.hires) {
-          promises.push(
-            gerResourceUrl(`${resourceUrl}/hires/${pad(i, 4)}.glb`).then(url => hiresUrls[i] = url)
-          )
+          hiresUrls[i] = gerResourceUrl(`${resourceUrl}/hires/${pad(i, 4)}.glb`)
         }
       }
 
       console.log('Wait for url resolving...')
       await Promise.all(promises);
 
-      const textureUrl = await gerResourceUrl(`${resourceUrl}/texture.mp4`);
+      const textureUrl = gerResourceUrl(`${resourceUrl}/texture.mp4`);
 
       const handlePlayerState = (playerState: FDPTextureState) => setPlayerState(playerState);
       const handleHiresState = (hiresMeshState: FDPMeshFrameState) => setHiresMeshState(hiresMeshState);
