@@ -1,9 +1,11 @@
 import * as THREE from 'three';
 
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
+import { VRButton } from 'three/examples/jsm/webxr/VRButton.js'
 
 import CONFIG from './Config';
 
+THREE.ColorManagement.enabled = false
 
 class RawTexture extends THREE.Texture {
   realGlTexture: WebGLTexture | null;
@@ -13,7 +15,7 @@ class RawTexture extends THREE.Texture {
     super();
     this.realGlTexture = gl.createTexture();
     this.isInitialize = false;
-    this.encoding = THREE.sRGBEncoding;
+    this.colorSpace = THREE.SRGBColorSpace;
     this.flipY = false;
   }
 }
@@ -22,7 +24,7 @@ class RawTexture extends THREE.Texture {
 export default class FourdEngine {
   private readonly scene: THREE.Scene;
   private readonly camera: THREE.PerspectiveCamera;
-  private renderer: THREE.WebGL1Renderer;
+  private renderer: THREE.WebGLRenderer;
 
   private orbitControls: OrbitControls;
   private modelPositionOffset: THREE.Vector3;
@@ -43,14 +45,25 @@ export default class FourdEngine {
       canvasDom.offsetWidth / canvasDom.offsetHeight,
       0.01
     );
-    this.renderer = new THREE.WebGL1Renderer({
+
+    this.renderer = new THREE.WebGLRenderer({
       antialias: true,
-      canvas: canvasDom
+      canvas: canvasDom,
+      context: canvasDom.getContext('webgl2')
     });
+    this.renderer.outputColorSpace = THREE.LinearSRGBColorSpace
+
+    // XR
+    const buttonElement = VRButton.createButton( this.renderer )
+    buttonElement.setAttribute('style', 'position: absolute; top: 20px; padding: 12px 6px; border: 1px solid rgb(255, 255, 255); border-radius: 4px; background: rgba(0, 0, 0, 0.1); color: rgb(255, 255, 255); font: 13px sans-serif; text-align: center; opacity: 0.5; outline: none; z-index: 999; cursor: auto; left: calc(50% - 75px); width: 150px;')
+
+    document.body.appendChild( buttonElement )
+    this.renderer.xr.enabled = true
+
     this.renderer.setSize(canvasDom.offsetWidth, canvasDom.offsetHeight);
     this.orbitControls = new OrbitControls(this.camera, this.renderer.domElement);
 
-    this.gl = this.renderer.domElement.getContext('webgl');
+    this.gl = this.renderer.domElement.getContext('webgl2');
     this.rawTexture = null;
     this.uniMaterial = null;
 
@@ -106,7 +119,7 @@ export default class FourdEngine {
     if (isHires) {
       const meshCore = mesh.children[0] as THREE.Mesh;
       const meshMaterial = meshCore.material as THREE.MeshStandardMaterial;
-      meshMaterial.map.encoding = THREE.LinearEncoding;
+      meshMaterial.map.colorSpace = THREE.LinearSRGBColorSpace;
       this.uniMaterial.map = meshMaterial.map;
       meshCore.material = this.uniMaterial;
       meshMaterial.dispose();
@@ -116,6 +129,7 @@ export default class FourdEngine {
 
     // Add mesh and offset position
     mesh.position.add(this.modelPositionOffset);
+    mesh.position.add(new THREE.Vector3(0, 1.7, -0.75))
     this.scene.add(mesh);
 
     // Purge unused scene group
@@ -138,7 +152,13 @@ export default class FourdEngine {
   }
 
   render() {
-    this.orbitControls.update();
+    if (!this.renderer.xr.isPresenting) {
+      this.orbitControls.update();
+    }
     this.renderer.render(this.scene, this.camera);
+  }
+
+  updateForXR() {
+    this.renderer.setAnimationLoop(() => this.render())
   }
 }

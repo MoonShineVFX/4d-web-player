@@ -59,11 +59,13 @@ export default class FourdPlayer {
       () => this.onTextureStateChanged()
     );
 
-    this.animate();
+    // this.animate();
+    this.engine.updateForXR()
   }
 
   private animate() {
     requestAnimationFrame(() => this.animate());
+
     const now = Date.now();
     if (!this.lastTimeStamp) {
       this.lastTimeStamp = now;
